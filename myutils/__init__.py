@@ -4,7 +4,9 @@
 
 import myutils.TurningPoints
 import myutils.DirectionalChange
+import myutils.PerceptuallyImportant
 
 
 FindingTurningPoints = TurningPoints.FindingTurningPoints
 FindingDirectionalChangePoints = DirectionalChange.FindingDirectionalChangePoints
+FindingPerceptuallyImportantPoints = PerceptuallyImportant.FindingPerceptuallyImportantPoints
