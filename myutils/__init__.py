@@ -3,6 +3,8 @@
 #
 
 import myutils.TurningPoints
+import myutils.DirectionalChange
 
 
 FindingTurningPoints = TurningPoints.FindingTurningPoints
+FindingDirectionalChangePoints = DirectionalChange.FindingDirectionalChangePoints
