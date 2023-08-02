@@ -91,6 +91,20 @@ def FindingTurningPoints(prices, mode = 'close', order = 1, smoothing = 1,real_b
             prices_close=np.array(in_prices['Close'])
             prices_high=prices_close
             prices_low=prices_close
+    elif mode == 'open_close' :
+        prices_oepn  = np.array(in_prices['Open'])
+        prices_close = np.array(in_prices['Close'])
+        prices_high_list = []
+        prices_low_list  = []
+        for idx in range(0,len(prices_oepn)) :
+            if prices_oepn[idx] >= prices_close[idx] :
+                prices_high_list.append(prices_oepn[idx])
+                prices_low_list.append(prices_close[idx])
+            else :
+                prices_high_list.append(prices_close[idx])
+                prices_low_list.append(prices_oepn[idx])
+        prices_high = np.array(prices_high_list)
+        prices_low  = np.array(prices_low_list)
     else :
         return None
     if len(prices_high) != len(prices_low) :
@@ -124,6 +138,11 @@ def FindingTurningPoints(prices, mode = 'close', order = 1, smoothing = 1,real_b
                     if real_body is True and in_prices.iloc[idx]['Open'] > in_prices.iloc[idx]['Close'] :
                         real_body_price = in_prices.iloc[idx]['Open']
                     local_max_min_point.append((idx,in_prices.iloc[idx]['Date'],real_body_price,point_type))
+                elif mode == 'open_close' :
+                    real_body_price = in_prices.iloc[idx]['Close']
+                    if in_prices.iloc[idx]['Open'] >= in_prices.iloc[idx]['Close'] :
+                        real_body_price = in_prices.iloc[idx]['Open']
+                    local_max_min_point.append((idx,in_prices.iloc[idx]['Date'],real_body_price,point_type))
             else :
                 # 同為波峰，選最高者
                 previous_price = local_max_min_point[-1][2]
@@ -144,6 +163,18 @@ def FindingTurningPoints(prices, mode = 'close', order = 1, smoothing = 1,real_b
                         if real_body is True and in_prices.iloc[idx]['Open'] > in_prices.iloc[idx]['Close'] :
                             real_body_price = in_prices.iloc[idx]['Open']
                         local_max_min_point.append((idx,in_prices.iloc[idx]['Date'],real_body_price,point_type))
+                elif mode == 'open_close' :
+                    current_price = in_prices.iloc[idx]['Close']
+                    if in_prices.iloc[idx]['Open'] >= in_prices.iloc[idx]['Close'] :
+                        current_price = in_prices.iloc[idx]['Open']
+                    if current_price > previous_price :
+                        # 移除前一筆
+                        previous_point = local_max_min_point.pop()
+                        # 新增目前這一筆
+                        real_body_price = in_prices.iloc[idx]['Close']
+                        if in_prices.iloc[idx]['Open'] >= in_prices.iloc[idx]['Close'] :
+                            real_body_price = in_prices.iloc[idx]['Open']
+                        local_max_min_point.append((idx,in_prices.iloc[idx]['Date'],real_body_price,point_type))
         elif idx in local_min_idx :
             if point_type != 'LO' :
                 # 波峰轉波谷
@@ -153,6 +184,11 @@ def FindingTurningPoints(prices, mode = 'close', order = 1, smoothing = 1,real_b
                 elif mode == 'close' :
                     real_body_price = in_prices.iloc[idx]['Close']
                     if real_body is True and in_prices.iloc[idx]['Open'] < in_prices.iloc[idx]['Close'] :
+                        real_body_price = in_prices.iloc[idx]['Open']
+                    local_max_min_point.append((idx,in_prices.iloc[idx]['Date'],real_body_price,point_type))
+                elif mode == 'open_close' :
+                    real_body_price = in_prices.iloc[idx]['Close']
+                    if in_prices.iloc[idx]['Open'] < in_prices.iloc[idx]['Close'] :
                         real_body_price = in_prices.iloc[idx]['Open']
                     local_max_min_point.append((idx,in_prices.iloc[idx]['Date'],real_body_price,point_type))
             else :
@@ -173,6 +209,18 @@ def FindingTurningPoints(prices, mode = 'close', order = 1, smoothing = 1,real_b
                         # 改新增目前這一筆
                         real_body_price = in_prices.iloc[idx]['Close']
                         if real_body is True and in_prices.iloc[idx]['Open'] < in_prices.iloc[idx]['Close'] :
+                            real_body_price = in_prices.iloc[idx]['Open']
+                        local_max_min_point.append((idx,in_prices.iloc[idx]['Date'],real_body_price,point_type))
+                elif mode == 'open_close' :
+                    current_price = in_prices.iloc[idx]['Close']
+                    if in_prices.iloc[idx]['Open'] < in_prices.iloc[idx]['Close'] :
+                        current_price = in_prices.iloc[idx]['Open']
+                    if current_price < previous_price :
+                        # 移除前一筆
+                        previous_point = local_max_min_point.pop()
+                        # 改新增目前這一筆
+                        real_body_price = in_prices.iloc[idx]['Close']
+                        if in_prices.iloc[idx]['Open'] < in_prices.iloc[idx]['Close'] :
                             real_body_price = in_prices.iloc[idx]['Open']
                         local_max_min_point.append((idx,in_prices.iloc[idx]['Date'],real_body_price,point_type))
     local_max_min_point = pd.DataFrame(local_max_min_point,columns=['DateIndex','Date','Price','Type'])
