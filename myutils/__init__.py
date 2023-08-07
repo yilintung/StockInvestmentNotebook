@@ -6,9 +6,11 @@ import myutils.TurningPoints
 import myutils.DirectionalChange
 import myutils.PerceptuallyImportant
 import myutils.RankEvaluate
+import myutils.TrendlineAutomation
 
 
 FindingTurningPoints = TurningPoints.FindingTurningPoints
 FindingDirectionalChangePoints = DirectionalChange.FindingDirectionalChangePoints
 FindingPerceptuallyImportantPoints = PerceptuallyImportant.FindingPerceptuallyImportantPoints
 StockRankEvaluate = RankEvaluate.StockRankEvaluate
+FitTrendlines = TrendlineAutomation.FitTrendlines
