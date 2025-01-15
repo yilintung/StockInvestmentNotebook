@@ -337,7 +337,7 @@ def test_DetectTurningPoints(prices, sma, mode, period = 1, smoothing = 1) :
 # 單元測試函式：趨勢線自動化
 def test_TrendlineAutomation(prices, mode, range_start_date, range_end_date, resistance = True, support = True) :
     # 區間內畫出趨勢線
-    parms,lines = TrendlineAutomation(prices[range_start_date:range_end_date],mode)
+    params,lines = TrendlineAutomation(prices[range_start_date:range_end_date],mode)
     if resistance is False and support is True :
         lines = lines[0]
         colors = 'xkcd:red'
@@ -354,4 +354,4 @@ def test_TrendlineAutomation(prices, mode, range_start_date, range_end_date, res
     # 繪出K線圖
     kwargs = dict(type='candle', style=s, figratio=(19,10), alines=dict(alines=seq_of_seq_of_points, linewidths=1.0, colors=colors, alpha=0.6), datetime_format='%Y-%m-%d')
     mpf.plot(prices,**kwargs)
-    return parms,lines
+    return params,lines
