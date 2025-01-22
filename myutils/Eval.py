@@ -300,6 +300,8 @@ def TrendlineAutomation(prices, mode = 'close') :
 def test_DetectTurningPoints(prices, sma, mode, period = 1, smoothing = 1) :
     _,_,max_min = DetectTurningPoints(prices,mode,period,smoothing)
     print("轉折點總筆數 ＝ {:d}".format(max_min.shape[0]))
+    if max_min.shape[0] < 1 :
+        return None
     display(max_min)
 
     # 設定K線格式
@@ -320,7 +322,7 @@ def test_DetectTurningPoints(prices, sma, mode, period = 1, smoothing = 1) :
         next_point = max_min.iloc[idx+1]
         turning_point_lines.append([[this_point['Date'],this_point['Price']],[next_point['Date'],next_point['Price']]])
         
-    # 設定均線與轉折點    
+    # 設定均線與轉折點
     apds = [
         mpf.make_addplot(turning_points,type='scatter',marker='o',markersize=25,color='xkcd:sky blue'),
         mpf.make_addplot(sma['SMA5'],width=1.0,color='xkcd:maroon'),
