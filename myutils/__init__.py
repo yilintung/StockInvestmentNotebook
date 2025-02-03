@@ -20,8 +20,3 @@ StockRankEvaluate = RankEvaluate.StockRankEvaluate
 FitTrendlines = TrendlineAutomation.FitTrendlines
 FindingHeadShoulderPatterns = HeadShoulders.FindingHeadShoulderPatterns
 StockGPT = StockGPT.StockGPT
-
-DetectTurningPoints = Eval.DetectTurningPoints
-TrendlineAutomation = Eval.TrendlineAutomation
-test_DetectTurningPoints = Eval.test_DetectTurningPoints
-test_TrendlineAutomation = Eval.test_TrendlineAutomation
