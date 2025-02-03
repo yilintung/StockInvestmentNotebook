@@ -10,8 +10,6 @@ import myutils.TrendlineAutomation
 import myutils.HeadShoulders
 import myutils.StockGPT
 
-import myutils.Eval
-
 
 FindingTurningPoints = TurningPoints.FindingTurningPoints
 FindingDirectionalChangePoints = DirectionalChange.FindingDirectionalChangePoints
