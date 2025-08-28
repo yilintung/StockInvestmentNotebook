@@ -1293,13 +1293,13 @@ class StockAnalysis :
             mpf.make_addplot(range_sma['SMA10'],width=0.8,color='xkcd:dark sky blue'),
             mpf.make_addplot(range_sma['SMA20'],width=0.8,color='xkcd:violet'),
             mpf.make_addplot(range_sma['SMA60'],width=0.8,color='xkcd:orange'),
-            mpf.make_addplot(range_kd['slowk'],width=0.8,panel=2,secondary_y=False,color='xkcd:red',ylabel='KD'),
-            mpf.make_addplot(range_kd['slowd'],width=0.8,panel=2,secondary_y=False,color='xkcd:blue'),
-            mpf.make_addplot(kd_overbought_line,width=0.8,panel=2,secondary_y=False,linestyle='--',color='xkcd:green'),
-            mpf.make_addplot(kd_oversold_line,width=0.8,panel=2,secondary_y=False,linestyle='--',color='xkcd:green'),
-            mpf.make_addplot(range_macd['macdhist'],type='bar',panel=3,secondary_y=False,color='xkcd:grey',ylabel='MACD'),
-            mpf.make_addplot(range_macd['macd'],width=0.8,panel=3,secondary_y=False,color='xkcd:red'),
-            mpf.make_addplot(range_macd['macdsignal'],width=0.8,panel=3,secondary_y=False,color='xkcd:blue')
+            mpf.make_addplot(range_kd['slowk'],width=0.8,panel=2,color='xkcd:red',ylabel='KD'),
+            mpf.make_addplot(range_kd['slowd'],width=0.8,panel=2,color='xkcd:blue'),
+            mpf.make_addplot(kd_overbought_line,width=0.8,panel=2,linestyle='--',color='xkcd:green'),
+            mpf.make_addplot(kd_oversold_line,width=0.8,panel=2,linestyle='--',color='xkcd:green'),
+            mpf.make_addplot(range_macd['macdhist'],type='bar',panel=3,color='xkcd:grey',ylabel='MACD'),
+            mpf.make_addplot(range_macd['macd'],width=0.8,panel=3,color='xkcd:red'),
+            mpf.make_addplot(range_macd['macdsignal'],width=0.8,panel=3,color='xkcd:blue')
         ]
 
         # 設定K線圖X軸座標值
@@ -1347,16 +1347,18 @@ class StockAnalysis :
         base64_image = base64.b64encode(crop_img.getvalue()).decode()
         
         # ＫＤ指標判讀之參考資料
-        ref_kd_df   = range_kd[-5:]
+        ref_kd_df   = range_kd[-5:].copy()
+        ref_kd_df.index = ref_kd_df.index.strftime('%Y-%m-%d')
         ref_kd_json = ref_kd_df.to_json(date_format='iso')
         
         # ＭＡＣＤ指標判讀之參考資料
-        ref_macd_df   = range_macd[-5:]
+        ref_macd_df   = range_macd[-5:].copy()
+        ref_macd_df.index = ref_macd_df.index.strftime('%Y-%m-%d')
         ref_macd_json = ref_macd_df.to_json(date_format='iso')
         
         # 系統提示詞（System Prompt） 與 使用者提問詞（User Prompt）
         system_prompt = '你是一位具備專業技術分析能力的股市分析師，請依據以下圖表進行全面分析並提供交易建議。圖表包含以下元素：主圖：K線圖表示股價趨勢，紅K代表收盤價高於開盤價、黑K代表收盤價低於開盤價，圖中包含四條移動平均線：棕色線為 5日移動平均線（代表短期趨勢）、天藍色線為 10日移動平均線（代表短期趨勢）、紫色線為 20日移動平均線（代表中期趨勢）、橙色線為 60日移動平均線（代表中期趨勢）；子圖一（Volume）：以柱狀體顯示每日成交量，顏色與K線同步反映多空；子圖二（KD 指標）：紅線為 K 線（slowk）、藍線為 D 線（slowd）、綠色虛線區隔超買區（>80）與超賣區（<20）；子圖三（MACD 指標）：紅線為 DIF 線（macd）、藍線為 MACD 線（macdsignal）、灰色柱體為 OSC（macdhist）。你需要結合 價格走勢、成交量變化、KD 與 MACD 指標，判斷：當前的趨勢狀況（上漲/盤整/下跌）、價量是否配合（多頭/空頭）、支撐與壓力位置、短中期可能的走勢、並且綜合分析結果來給予評價。使用通順的繁體中文回覆，字詞代換：回調 -> 回檔，止盈 -> 停利，止損 -> 停損 ...。'
-        user_question = '請依據下圖（圖中價格單位為： {} ）進行技術分析，包含價格趨勢（上漲/盤整/下跌）、價量關係、支撐與壓力判斷、KD指標解讀（解讀時若有需要可參考最近五個交易日資料 ： {} ，但結果不要提及參考資料）與MACD指標解讀，並且綜合上述分析結果給出評價。'.format(self._price_volume_unit_str,ref_kd_json)
+        user_question = '請依據下圖（圖中價格單位為： {} ）進行技術分析，包含價格趨勢（上漲/盤整/下跌）、價量關係、支撐與壓力判斷、KD指標解讀（解讀時若有需要可參考最近五個交易日資料 ： {} ，但結果不要提及參考資料）與MACD指標解讀（解讀時若有需要可參考最近五個交易日資料 ： {} ，但結果不要提及參考資料），並且綜合上述分析結果給出評價。'.format(self._price_volume_unit_str,ref_kd_json,ref_macd_json)
         
         # 與GPT-4o對話
         response = self._openai_api_client.chat.completions.create(
