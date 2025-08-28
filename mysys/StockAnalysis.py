@@ -1297,9 +1297,9 @@ class StockAnalysis :
             mpf.make_addplot(range_kd['slowd'],width=0.8,panel=2,color='xkcd:blue'),
             mpf.make_addplot(kd_overbought_line,width=0.8,panel=2,linestyle='--',color='xkcd:green'),
             mpf.make_addplot(kd_oversold_line,width=0.8,panel=2,linestyle='--',color='xkcd:green'),
-            mpf.make_addplot(range_macd['macdhist'],type='bar',panel=3,color='xkcd:grey',ylabel='MACD'),
-            mpf.make_addplot(range_macd['macd'],width=0.8,panel=3,color='xkcd:red'),
-            mpf.make_addplot(range_macd['macdsignal'],width=0.8,panel=3,color='xkcd:blue')
+            mpf.make_addplot(range_macd['macdhist'],type='bar',panel=3,secondary_y=False,color='xkcd:grey',ylabel='MACD'),
+            mpf.make_addplot(range_macd['macd'],width=0.8,panel=3,secondary_y=False,color='xkcd:red'),
+            mpf.make_addplot(range_macd['macdsignal'],width=0.8,panel=3,secondary_y=False,color='xkcd:blue')
         ]
 
         # 設定K線圖X軸座標值
