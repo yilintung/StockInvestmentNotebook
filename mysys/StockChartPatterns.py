@@ -575,7 +575,6 @@ class StockChartPatterns :
                                     self._debug_print('＃ 前轉折高點超過此轉折高點１０％，進行特別處理。前一轉折高點 ＝ \n{}\n此轉折高點 ＝ \n{}'.format(bottom_pattern_high_point,point))
                                     previous_high_point        = bottom_pattern_high_point
                                     bottom_pattern_high_point  = point
-                                    # bottom_pattern_start_point = turning_points.iloc[idx-1] # ＮＯＴＥ：這段程式造成ＢＵＧ！
                         # 設定或更新先前轉折高點
                         prev_hi_point = point
                 
