@@ -688,6 +688,7 @@ class StockAnalysis :
         self._macd_df               = None
         self._weekly_kd_df          = None
         self._price_volume_unit_str = None
+        self._price_unit            = None
         self._volume_unit           = None
         self._image_dict            = {}
     
@@ -766,9 +767,11 @@ class StockAnalysis :
             
             if industry_category == 'Index' or industry_category == '大盤' :
                 self._price_volume_unit_str = '價格單位為點，成交量單位為億元'
+                self._price_unit            = '點'
                 self._volume_unit           = '億元'
             else :
                 self._price_volume_unit_str = '價格單位為元，成交量單位為張'
+                self._price_unit            = '元'
                 self._volume_unit           = '張'
                 
             return True
@@ -1037,7 +1040,7 @@ class StockAnalysis :
         description_str = ''
         for pattern in result :
             if 'is_breakout' in pattern['資料'] or 'bottom_pattern_breakout_date' in pattern['資料'] :
-                pattern_description = '{}之{}，型態範圍由{}開始到{}結束，估算目標價為{:.2f}。\n'.format(pattern['類型'],pattern['型態'],pattern['資料']['neckline_start_date'],pattern['資料']['neckline_end_date'],pattern['資料']['target_price'])
+                pattern_description = '{}之{}，型態範圍由{}開始到{}結束，估算目標價為{:.2f}{}。\n'.format(pattern['類型'],pattern['型態'],pattern['資料']['neckline_start_date'],pattern['資料']['neckline_end_date'],pattern['資料']['target_price'],self._price_unit)
             else :
                 if 'neckline_start_date' in pattern['資料'] and 'neckline_end_date' in pattern['資料'] :
                     pattern_description = '尚未成形{}之{}，型態範圍由{}開始到{}結束。\n'.format(pattern['類型'],pattern['型態'],pattern['資料']['neckline_start_date'],pattern['資料']['neckline_end_date'])
@@ -1346,6 +1349,11 @@ class StockAnalysis :
         # 將影像檔(PNG)編碼為Base64
         base64_image = base64.b64encode(crop_img.getvalue()).decode()
         
+        # 支撐與壓力判斷之參考資料
+        ref_price_sma_df = pd.concat([range_prices[-5:],range_sma[-5:]],axis=1)
+        ref_price_sma_df.index = ref_price_sma_df.index.strftime('%Y-%m-%d')
+        ref_price_sma_json = ref_price_sma_df.to_json(date_format='iso')
+        
         # ＫＤ指標判讀之參考資料
         ref_kd_df   = range_kd[-5:].copy()
         ref_kd_df.index = ref_kd_df.index.strftime('%Y-%m-%d')
@@ -1357,10 +1365,11 @@ class StockAnalysis :
         ref_macd_json = ref_macd_df.to_json(date_format='iso')
         
         # 系統提示詞（System Prompt） 與 使用者提問詞（User Prompt）
+        # TODO：持續驗證與確認中
         system_prompt = '你是一位具備專業技術分析能力的股市分析師，請依據以下圖表進行全面分析並提供交易建議。圖表包含以下元素：主圖：K線圖表示股價趨勢，紅K代表收盤價高於開盤價、黑K代表收盤價低於開盤價，圖中包含四條移動平均線：棕色線為 5日移動平均線（代表短期趨勢）、天藍色線為 10日移動平均線（代表短期趨勢）、紫色線為 20日移動平均線（代表中期趨勢）、橙色線為 60日移動平均線（代表中期趨勢）；子圖一（Volume）：以柱狀體顯示每日成交量，顏色與K線同步反映多空；子圖二（KD 指標）：紅線為 K 線（slowk）、藍線為 D 線（slowd）、綠色虛線區隔超買區（>80）與超賣區（<20）；子圖三（MACD 指標）：紅線為 DIF 線（macd）、藍線為 MACD 線（macdsignal）、灰色柱體為 OSC（macdhist）。你需要結合 價格走勢、成交量變化、KD 與 MACD 指標，判斷：當前的趨勢狀況（上漲/盤整/下跌）、價量是否配合（多頭/空頭）、支撐與壓力位置、短中期可能的走勢、並且綜合分析結果來給予評價。使用通順的繁體中文回覆，字詞代換：回調 -> 回檔，止盈 -> 停利，止損 -> 停損 ...。'
-        user_question = '請依據下圖（圖中價格單位為： {} ）進行技術分析，包含價格趨勢（上漲/盤整/下跌）、價量關係、支撐與壓力判斷、KD指標解讀（解讀時若有需要可參考最近五個交易日資料 ： {} ，但結果不要提及參考資料）與MACD指標解讀（解讀時若有需要可參考最近五個交易日資料 ： {} ，但結果不要提及參考資料），並且綜合上述分析結果給出評價。'.format(self._price_volume_unit_str,ref_kd_json,ref_macd_json)
+        user_question = '請依據下圖（圖中價格單位為： {} ）進行技術分析，包含價格趨勢（上漲/盤整/下跌）、價量關係、支撐與壓力判斷（判斷時若有需要可參考最近五個交易日的價格與移動平均線資料 ： {} ，但回覆時不要提及參考資料）、KD指標解讀（解讀時若有需要可參考最近五個交易日的KD指標資料 ： {} ，但回覆時不要提及參考資料）與MACD指標解讀（解讀時若有需要可參考最近五個交易日的MACD指標資料 ： {} ，但回覆時不要提及參考資料），並且綜合上述分析結果給出評價。'.format(self._price_volume_unit_str,ref_price_sma_json,ref_kd_json,ref_macd_json)
         
-        # 與GPT-4o對話
+        # 與GPT-4o模型對話
         response = self._openai_api_client.chat.completions.create(
             model='gpt-4o',
             messages=[
