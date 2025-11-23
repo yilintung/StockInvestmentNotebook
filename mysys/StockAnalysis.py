@@ -722,7 +722,7 @@ class StockAnalysis :
             try :
                 daily_price_df = pd.read_sql( sql_cmd, self._conn)
             except Exception as e:
-                self._debug_print('讀取日K資料錯誤，錯誤訊息＝ {}'.format(str(e)))
+                self._debug_print('讀取日Ｋ資料錯誤，錯誤訊息＝ {}'.format(str(e)))
                 return False
             # 格式轉換：日期格式、成交量(成交值)
             daily_price_df           = daily_price_df.drop(columns=['SerialNo','StockID'])
@@ -746,7 +746,7 @@ class StockAnalysis :
             try :
                 weekly_price_df = pd.read_sql( sql_cmd, self._conn)
             except Exception as e:
-                self._debug_print('讀取周K資料錯誤，錯誤訊息＝ {}'.format(str(e)))
+                self._debug_print('讀取週Ｋ資料錯誤，錯誤訊息＝ {}'.format(str(e)))
                 return False
             # 格式轉換：日期格式、成交量(成交值)
             weekly_price_df           = weekly_price_df.drop(columns=['SerialNo','StockID'])
@@ -929,6 +929,9 @@ class StockAnalysis :
             description_str = description_str.rstrip(' ,')
             description_str = description_str + '\n'
         
+        if len(description_str) == 0 :
+            description_str = '（未識別出Ｋ線型態）'
+        
         return description_str
     
     ### 量化技術分析工具： 量化位階評價 ###
@@ -1048,6 +1051,9 @@ class StockAnalysis :
                     pattern_description = '{}之{}，型態範圍由{}開始到{}結束。\n'.format(pattern['類型'],pattern['型態'],pattern['資料']['support_line_start_date'],pattern['資料']['support_line_end_date'])
             description_str = description_str + pattern_description
         
+        if len(description_str) == 0 :
+            description_str = '（未識別出價格型態）'
+        
         # 產生底部型態圖像
         bottom_pattern_image = generate_bottom_pattern_image(range_prices, result)
         
@@ -1150,7 +1156,7 @@ class StockAnalysis :
         # 設定中期(60)區間價格與均線
         range_prices = self._daily_price_df[-60:]
 
-        # 設定中期(60)日KD指標區間
+        # 設定中期(60)日ＫＤ指標區間
         range_talib_daily_kd = self._kd_df[-60:]
         
         # 尋找KD黃金交叉
@@ -1205,12 +1211,14 @@ class StockAnalysis :
             description_str = description_str + 'MACD在零軸以上，中期多方'
         elif self._macd_df['macdsignal'].iloc[-1] < 0 :
             description_str = description_str + 'MACD在零軸以下，中期空方'
+        else :
+            description_str = description_str + '（中期多空不明）'
         
         return description_str
         
     ### 量化技術分析工具： 確認週ＫＤ指標交叉 ###
     def _weekly_kd_cross( self) :
-        # 設定中期(60)周K線區間
+        # 設定中期(60)週Ｋ線區間
         start_date             = self._daily_price_talib_df.iloc[-60].name.strftime('%Y-%m-%d')
         end_date               = self._daily_price_talib_df.iloc[-1].name.strftime('%Y-%m-%d')
         weekly_start_date,_    = get_monday_to_sunday(start_date)
@@ -1219,12 +1227,12 @@ class StockAnalysis :
         df                     = pd.read_sql_query(sqlcmd, self._conn)
         if df.empty is True :
             weekly_end_date,_  = get_monday_to_sunday(end_date,weekly=-1)
-        self._debug_print('周K線範圍 ： 開始日期 ＝ {} ， 結束日期 ＝ {}'.format(weekly_start_date,weekly_end_date))
+        self._debug_print('週K線範圍 ： 開始日期 ＝ {} ， 結束日期 ＝ {}'.format(weekly_start_date,weekly_end_date))
 
-        # 設定中期(60)周K線範圍
+        # 設定中期(60)週Ｋ線範圍
         range_weekly_price_df  = self._weekly_price_df[weekly_start_date:weekly_end_date]
 
-        # 設定中期(60)周KD指標區間
+        # 設定中期(60)週ＫＤ指標區間
         range_talib_weekly_kd  = self._weekly_kd_df[weekly_start_date:weekly_end_date]
         
         # 尋找KD黃金交叉
@@ -1252,22 +1260,22 @@ class StockAnalysis :
             death_cross_last_index  = date_to_index(range_weekly_price_df,death_cross_last_date)
 
             if golden_cross_last_index > death_cross_last_index :
-                description_str = description_str + '於{}當周黃金交叉。'.format(golden_cross_last_date)
+                description_str = description_str + '於{}當週黃金交叉。'.format(golden_cross_last_date)
             else :
-                description_str = description_str + '於{}當周死亡交叉。'.format(death_cross_last_date)
+                description_str = description_str + '於{}當週死亡交叉。'.format(death_cross_last_date)
         else :
             if golden_cross_last_date is not None :
-                description_str = description_str + '於{}當周黃金交叉。'.format(golden_cross_last_date)
+                description_str = description_str + '於{}當週黃金交叉。'.format(golden_cross_last_date)
             elif death_cross_last_date is not None :
-                description_str = description_str + '於{}當周死亡交叉。'.format(death_cross_last_date)
+                description_str = description_str + '於{}當週死亡交叉。'.format(death_cross_last_date)
             else :
                 description_str = description_str + '未發生交叉。'.format(death_cross_last_date)
         
         # 超買區與超賣區判斷
         if range_talib_weekly_kd['slowk'].iloc[-1] > 80.0 and range_talib_weekly_kd['slowd'].iloc[-1] > 80.0 :
-            description_str = description_str + '並且{}該周在超買區。'.format(range_talib_weekly_kd.iloc[-1].name.strftime('%Y-%m-%d'))
+            description_str = description_str + '並且{}該週在超買區。'.format(range_talib_weekly_kd.iloc[-1].name.strftime('%Y-%m-%d'))
         elif range_talib_weekly_kd['slowk'].iloc[-1] < 20.0 and range_talib_weekly_kd['slowd'].iloc[-1] < 20.0:
-            description_str = description_str + '並且{}該周在超賣區。'.format(range_talib_weekly_kd.iloc[-1].name.strftime('%Y-%m-%d'))
+            description_str = description_str + '並且{}該週在超賣區。'.format(range_talib_weekly_kd.iloc[-1].name.strftime('%Y-%m-%d'))
         
         return description_str
         
@@ -1305,7 +1313,7 @@ class StockAnalysis :
             mpf.make_addplot(range_macd['macdsignal'],width=0.8,panel=3,secondary_y=False,color='xkcd:blue')
         ]
 
-        # 設定K線圖X軸座標值
+        # 設定Ｋ線圖X軸座標值
         ticks        = []
         tlabs        = []
         label_count  = 0
@@ -1329,14 +1337,14 @@ class StockAnalysis :
                 label_count = 0
             label_count += 1
         
-        # 繪製K線圖
+        # 繪製Ｋ線圖
         tmp = io.BytesIO()
         kwargs = dict(type='candle', style=s, figratio=(16,9), volume=True, addplot=added_plots, main_panel=0, volume_panel=1, panel_ratios=(5, 1, 2, 2), num_panels=4, datetime_format='%Y-%m-%d', returnfig=True, savefig=dict(fname=tmp))
         fig, axlist = mpf.plot(range_prices,**kwargs)
         axlist[-2].set_xticks(ticks,labels=tlabs,ha='right')
         tmp = None
         
-        # 保存K線圖
+        # 保存Ｋ線圖
         img = io.BytesIO()
         fig.savefig(img,format='png')
 
