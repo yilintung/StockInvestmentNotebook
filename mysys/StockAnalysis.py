@@ -652,9 +652,9 @@ class StockAnalysis :
         tool_list.append('ＭＡＣＤ指標')
         description_list.append(description)
         
-        # （８） 周Ｋ－周ＫＤ指標
+        # （８） 週Ｋ－週ＫＤ指標
         description = self._weekly_kd_cross()
-        tool_list.append('周Ｋ－周ＫＤ指標')
+        tool_list.append('週Ｋ－週ＫＤ指標')
         description_list.append(description)
         
         # 整體評價
@@ -692,7 +692,7 @@ class StockAnalysis :
         self._volume_unit           = None
         self._image_dict            = {}
     
-    ### 從資料庫中載入日Ｋ與周Ｋ資料之內部方法 ###
+    ### 從資料庫中載入日Ｋ與週Ｋ資料之內部方法 ###
     def _loading_price_data( self, stock_id) :
         # 將載入的「台股總覽 TaiwanStockInfo」進行格式轉換
         df_stock_info = self._df_stock_info.set_index(self._df_stock_info['StockID'],inplace=False)
@@ -715,7 +715,7 @@ class StockAnalysis :
             df                 = pd.read_sql_query(sqlcmd, self._conn)
             if df.empty is True :
                 weekly_end_date,_ = get_monday_to_sunday(daily_end_date,weekly=-1)
-            self._debug_print('日Ｋ開始日期 ＝ {} ，日Ｋ結束日期 ＝ {} ， 周Ｋ開始日期 ＝ {} ， 周Ｋ結束日期 ＝ {}'.format(daily_start_date,daily_end_date,weekly_start_date,weekly_end_date))
+            self._debug_print('日Ｋ開始日期 ＝ {} ，日Ｋ結束日期 ＝ {} ， 週Ｋ開始日期 ＝ {} ， 週Ｋ結束日期 ＝ {}'.format(daily_start_date,daily_end_date,weekly_start_date,weekly_end_date))
             
             # 讀取日Ｋ價格資料
             sql_cmd = "SELECT * FROM DailyPrice WHERE StockID='{}' AND (Date BETWEEN '{}' AND '{}')".format(stock_id,daily_start_date,daily_end_date)
@@ -741,7 +741,7 @@ class StockAnalysis :
                 daily_price_df['Volume'] = daily_price_df['Volume'].astype('int64')
             self._daily_price_df         = daily_price_df
             
-            # 讀取周Ｋ價格資料
+            # 讀取週Ｋ價格資料
             sql_cmd = "SELECT * FROM WeeklyPrice WHERE StockID='{}' AND (Date BETWEEN '{}' AND '{}')".format(stock_id,weekly_start_date,weekly_end_date)
             try :
                 weekly_price_df = pd.read_sql( sql_cmd, self._conn)
@@ -784,7 +784,7 @@ class StockAnalysis :
         daily_price_df_talib.columns  = [ i.lower() for i in daily_price_df_talib.columns]
         self._daily_price_talib_df    = daily_price_df_talib
         
-        # 周Ｋ價格資料轉換為talib格式
+        # 週Ｋ價格資料轉換為talib格式
         weekly_price_df_talib         = self._weekly_price_df.copy()
         weekly_price_df_talib.columns = [ i.lower() for i in weekly_price_df_talib.columns]
         
@@ -817,7 +817,7 @@ class StockAnalysis :
         # 取小數點後兩位
         self._macd_df    = talib_daily_macd.round(2)
         
-        # 計算周ＫＤ指標
+        # 計算週ＫＤ指標
         talib_weekly_kd    = STOCH( weekly_price_df_talib, fastk_period=6, slowk_period=3, slowd_period=3)
         # 取小數點後兩位
         self._weekly_kd_df = talib_weekly_kd.round(2)
@@ -1208,7 +1208,7 @@ class StockAnalysis :
         
         return description_str
         
-    ### 量化技術分析工具： 確認周ＫＤ指標交叉 ###
+    ### 量化技術分析工具： 確認週ＫＤ指標交叉 ###
     def _weekly_kd_cross( self) :
         # 設定中期(60)周K線區間
         start_date             = self._daily_price_talib_df.iloc[-60].name.strftime('%Y-%m-%d')
