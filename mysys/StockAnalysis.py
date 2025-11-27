@@ -442,7 +442,7 @@ def chart_pattern_recognition( prices, debug=False):
                     # TODO : 這部份待檢討
                     if prices.iloc[idx]['Close'] < (possible_bottom_pattern['bottom_pattern_breakout_price'] - (possible_bottom_pattern['bottom_pattern_breakout_price'] * 0.05)):
                         bottom_pattern_exist = False
-                        pattern_recognition_debug_print('☆ 底部型態可能突破失敗：突破價格為{}， 跌破日{}之收盤價為{}）'.format(possible_bottom_pattern['bottom_pattern_breakout_price'],prices.iloc[idx].name.strftime("%Y-%m-%d"),prices.iloc[idx]['Close']),debug=debug)
+                        pattern_recognition_debug_print('☆ 底部型態可能突破失敗：突破價格為{:.2f}， 跌破日{}之收盤價為{:.2f}）'.format(possible_bottom_pattern['bottom_pattern_breakout_price'],prices.iloc[idx].name.strftime("%Y-%m-%d"),prices.iloc[idx]['Close']),debug=debug)
                         break
             else :
                 # 底部型態尚未突破，因此不做進一步確認與處理
@@ -476,11 +476,13 @@ def chart_pattern_recognition( prices, debug=False):
                         price_first_idx = date_to_index(prices,bottom_pattern_reached_date)
                         if cureent_pattern_first_idx < price_first_idx :
                             # 底部型態完成（到目標價或滿足區）後，將會排除在其之前的（由轉折點所識別之）型態
+                            pattern_recognition_debug_print('底部型態完成後被排除的型態：{}\n{}'.format(pattern_name,pattern),debug=debug)
                             continue
                     else :
                         price_last_idx  = date_to_index(prices,possible_bottom_pattern['neckline_start_date'])
                         if current_pattern_last_idx > price_last_idx :
                             # 當有未到目標價的底部型態或底部型態雛形時，將會排除在其之後的（由轉折點所識別之）型態
+                            pattern_recognition_debug_print('底部型態或雛形時被排除的型態：{}\n{}'.format(pattern_name,pattern),debug=debug)
                             continue
                 if possible_pattern is None :
                     possible_pattern     = [pattern_name,pattern['argument'],pattern['window']]
@@ -1077,7 +1079,6 @@ class StockAnalysis :
             if 'is_breakout' in pattern['資料'] :
                 pattern_description = '{}之{}，型態範圍由{}開始到{}結束，估算目標價為{:.2f}{}。\n'.format(pattern['類型'],pattern['型態'],pattern['資料']['neckline_start_date'],pattern['資料']['neckline_end_date'],pattern['資料']['target_price'],self._price_unit)
             elif 'bottom_pattern_breakout_date' in pattern['資料'] :
-                # TODO : 這部份待檢討
                 if '已達目標價之日期' in pattern and pattern['已達目標價之日期'] is not None :
                     pattern_description = '{}之{}，型態範圍由{}開始到{}結束，{}時已達估算之目標價（{:.2f}{}）。\n'.format(pattern['類型'],pattern['型態'],pattern['資料']['neckline_start_date'],pattern['資料']['neckline_end_date'], pattern['已達目標價之日期'],pattern['資料']['target_price'],self._price_unit)
                 else :
