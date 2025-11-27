@@ -425,12 +425,12 @@ def chart_pattern_recognition( prices, debug=False):
         if bottom_end_idx > possible_bottom_end_idx :
             possible_bottom_pattern = bottom_pattern
             possible_bottom_end_idx = bottom_end_idx
-    # 底部型態識別後之處理程序
     if possible_bottom_pattern is not None :
         if date_to_index(prices,possible_bottom_pattern['neckline_end_date']) > (date_to_index(prices,prices.iloc[-1].name) // 2) :
+            # 底部型態識別之後處理程序
             bottom_pattern_exist = True
             if 'bottom_pattern_breakout_date' in possible_bottom_pattern :
-                # 底部型態突破後確認
+                # 底部型態突破後確認與處理
                 for idx in range(date_to_index(prices,possible_bottom_pattern['bottom_pattern_breakout_date']),date_to_index(prices,prices.iloc[-1].name)) :
                     # 當最高價大於等於底部型態目標價時，視為底部型態完成（到達滿足區或目標價）
                     if prices.iloc[idx]['High'] >= possible_bottom_pattern['target_price'] :
@@ -438,13 +438,17 @@ def chart_pattern_recognition( prices, debug=False):
                         bottom_pattern_reached_date = prices.iloc[idx].name.strftime("%Y-%m-%d")
                         pattern_recognition_debug_print('★ 已達底部型態之目標價 ： 日期 ＝ {} （索引 ＝ {}）'.format(bottom_pattern_reached_date,idx),debug=debug)
                         break
-                    # 當收盤價低於頸線結束價格５％時，底型可能突破失敗
-                    # TODO : 這部分待檢討
-                    if prices.iloc[idx]['Close'] < (possible_bottom_pattern['neckline_end_price'] - (possible_bottom_pattern['neckline_end_price'] * 0.05)):
+                    # 當收盤價小於突破價格５％時，該底部型態可能是突破失敗的情況
+                    # TODO : 這部份待檢討
+                    if prices.iloc[idx]['Close'] < (possible_bottom_pattern['bottom_pattern_breakout_price'] - (possible_bottom_pattern['bottom_pattern_breakout_price'] * 0.05)):
                         bottom_pattern_exist = False
-                        pattern_recognition_debug_print('☆ 底部型態可能突破失敗！',debug=debug)
+                        pattern_recognition_debug_print('☆ 底部型態可能突破失敗：突破價格為{}， 跌破日{}之收盤價為{}）'.format(possible_bottom_pattern['bottom_pattern_breakout_price'],prices.iloc[idx].name.strftime("%Y-%m-%d"),prices.iloc[idx]['Close']),debug=debug)
                         break
+            else :
+                # 底部型態尚未突破，因此不做進一步確認與處理
+                pass
         else :
+            # 找到的底部型態若在價格資料的前半部則無參考價值，因此該底部型態將不會回傳
             pattern_recognition_debug_print('◆ 找到的底部型態太靠前 ： 頸線結束日期 ＝ {} （索引 ＝ {}）， 價格資料的最後一個索引 ＝ {} '.format(possible_bottom_pattern['neckline_end_date'],date_to_index(prices,possible_bottom_pattern['neckline_end_date']),date_to_index(prices,prices.iloc[-1].name)),debug=debug)
     
     # 由轉折點識別型態
@@ -453,38 +457,35 @@ def chart_pattern_recognition( prices, debug=False):
     turning_point_args.append({'mode':'close', 'order':10, 'smoothing':5})
     turning_point_args.append({'mode':'open_close', 'order':10})
     turning_point_args.append({'mode':'open_close', 'order':20})
-    patterns         = chart_pattern.Recognition(max_bars=360, turning_point_args=turning_point_args)
-    possible_pattern = None
+    patterns           = chart_pattern.Recognition(max_bars=360, turning_point_args=turning_point_args)
+    possible_pattern   = None
     if patterns is not None and len(patterns) > 0 :
         for pattern_name in patterns:
             if bottom_pattern_exist is True and bottom_pattern_reached is False and ('底' in pattern_name or pattern_name == '下降楔形') :
+                # 當有未到目標價的底部型態或底部型態雛形時，（由轉折點所識別之）底部或下降楔形型態將會被排除
                 continue
             for pattern in patterns[pattern_name] :
+                cureent_pattern_first_idx  = date_to_index(prices,pattern['window'].iloc[0]['Date'])
+                current_pattern_last_idx   = date_to_index(prices,pattern['window'].iloc[-1]['Date'])
+                price_first_idx            = date_to_index(prices,prices.iloc[0].name)
+                price_last_idx             = date_to_index(prices,prices.iloc[-1].name)
                 if bottom_pattern_exist is True :
+                    # 當已識別到（底型反轉操作法之）底部型態後所需額外處理程序
+                    # TODO : 這部份待檢討
                     if bottom_pattern_reached is True :
-                        # 底部型態突破後才能確認是否到達目標價
-                        if date_to_index(prices,pattern['window'].iloc[0]['Date']) < date_to_index(prices,bottom_pattern_reached_date) :
-                            # 底部型態完成（到達目標價或滿足區）後，將會排除之前由轉折點所識別型態
-                            # TODO : 這部分待檢討
+                        price_first_idx = date_to_index(prices,bottom_pattern_reached_date)
+                        if cureent_pattern_first_idx < price_first_idx :
+                            # 底部型態完成（到目標價或滿足區）後，將會排除在其之前的（由轉折點所識別之）型態
                             continue
-                        else :
-                            pass
                     else :
-                        pass
-                    if date_to_index(prices,pattern['window'].iloc[-1]['Date']) > date_to_index(prices,possible_bottom_pattern['neckline_start_date']) :
-                        # 當有底部型態或其雛形時，將會排除在其之後由轉折點所識別型態
-                        # TODO : 這部分待檢討
-                        continue
+                        price_last_idx  = date_to_index(prices,possible_bottom_pattern['neckline_start_date'])
+                        if current_pattern_last_idx > price_last_idx :
+                            # 當有未到目標價的底部型態或底部型態雛形時，將會排除在其之後的（由轉折點所識別之）型態
+                            continue
                 if possible_pattern is None :
                     possible_pattern     = [pattern_name,pattern['argument'],pattern['window']]
                 else :
-                    current_pattern_last_idx   = date_to_index(prices,pattern['window'].iloc[-1]['Date'])
                     possible_pattern_last_idx  = date_to_index(prices,possible_pattern[2].iloc[-1]['Date'])
-                    # TODO : 這部分待檢討
-                    if bottom_pattern_exist is True and bottom_pattern_reached is False :
-                        price_last_idx = date_to_index(prices,possible_bottom_pattern['neckline_start_date'])
-                    else :
-                        price_last_idx = date_to_index(prices,prices.iloc[-1].name)
                     if (price_last_idx - current_pattern_last_idx) < (price_last_idx - possible_pattern_last_idx) :
                         possible_pattern = [pattern_name,pattern['argument'],pattern['window']]
     
@@ -1076,7 +1077,7 @@ class StockAnalysis :
             if 'is_breakout' in pattern['資料'] :
                 pattern_description = '{}之{}，型態範圍由{}開始到{}結束，估算目標價為{:.2f}{}。\n'.format(pattern['類型'],pattern['型態'],pattern['資料']['neckline_start_date'],pattern['資料']['neckline_end_date'],pattern['資料']['target_price'],self._price_unit)
             elif 'bottom_pattern_breakout_date' in pattern['資料'] :
-                # TODO : 這部分待檢討
+                # TODO : 這部份待檢討
                 if '已達目標價之日期' in pattern and pattern['已達目標價之日期'] is not None :
                     pattern_description = '{}之{}，型態範圍由{}開始到{}結束，{}時已達估算之目標價（{:.2f}{}）。\n'.format(pattern['類型'],pattern['型態'],pattern['資料']['neckline_start_date'],pattern['資料']['neckline_end_date'], pattern['已達目標價之日期'],pattern['資料']['target_price'],self._price_unit)
                 else :
