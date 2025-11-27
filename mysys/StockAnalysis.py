@@ -476,13 +476,13 @@ def chart_pattern_recognition( prices, debug=False):
                         price_first_idx = date_to_index(prices,bottom_pattern_reached_date)
                         if cureent_pattern_first_idx < price_first_idx :
                             # 底部型態完成（到目標價或滿足區）後，將會排除在其之前的（由轉折點所識別之）型態
-                            pattern_recognition_debug_print('底部型態完成後被排除的型態：{}\n{}'.format(pattern_name,pattern),debug=debug)
+                            #pattern_recognition_debug_print('底部型態完成後被排除的型態：{}\n{}'.format(pattern_name,pattern),debug=debug)
                             continue
                     else :
                         price_last_idx  = date_to_index(prices,possible_bottom_pattern['neckline_start_date'])
                         if current_pattern_last_idx > price_last_idx :
                             # 當有未到目標價的底部型態或底部型態雛形時，將會排除在其之後的（由轉折點所識別之）型態
-                            pattern_recognition_debug_print('底部型態或雛形時被排除的型態：{}\n{}'.format(pattern_name,pattern),debug=debug)
+                            #pattern_recognition_debug_print('底部型態或雛形時被排除的型態：{}\n{}'.format(pattern_name,pattern),debug=debug)
                             continue
                 if possible_pattern is None :
                     possible_pattern     = [pattern_name,pattern['argument'],pattern['window']]
