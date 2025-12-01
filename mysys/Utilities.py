@@ -293,13 +293,13 @@ def UpdatestockDatabase(prev_days=1, update_daily_price = True, update_weekly_pr
                     if resp.status_code == 200 :
                         break
                     else :
-                        print('周K：日期{}發生錯誤，回應狀態碼 ＝ {}'.format(price_date,resp.status_code))
+                        print('週K：日期{}發生錯誤，回應狀態碼 ＝ {}'.format(price_date,resp.status_code))
                         if resp.status_code == 402 :
                             time.sleep(10*60)
                 data = resp.json()
                 df_weekly_price = pd.DataFrame(data["data"])
                 if df_weekly_price.empty is not True :
-                    print('周K：{}'.format(price_date))
+                    print('週K：{}'.format(price_date))
                     df_weekly_price = df_weekly_price.drop(columns=['yweek','spread','trading_turnover'])
                     df_weekly_price = df_weekly_price.rename(columns={'date':'Date','stock_id':'StockID','trading_volume':'Volume','trading_money':'Value','open':'Open','max':'High','min':'Low','close':'Close'})
                     # 保存格式：日期、股票代碼、開盤價、最高價、最低價、收盤價、成交量與成交值
@@ -310,7 +310,7 @@ def UpdatestockDatabase(prev_days=1, update_daily_price = True, update_weekly_pr
                 else :    
                     time.sleep(1)
             else :
-                #print('周K：日期{}資料已存在於資料庫中'.format(price_date))
+                #print('週K：日期{}資料已存在於資料庫中'.format(price_date))
                 time.sleep(1)
         
         if update_monthly_price is True :
