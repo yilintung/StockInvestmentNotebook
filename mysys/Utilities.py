@@ -287,21 +287,20 @@ def UpdatestockDatabase(prev_days=10) :
                 sql_daily_df = sql_daily_df[new_order]
                 sql_daily_df = sql_daily_df.reset_index()
                 sql_daily_df = sql_daily_df.drop(columns=['index'])
-                # 比對FinMind API與資料庫之資料內容
+                # 判斷略過還是更新
                 result = None
                 if len(sql_daily_df) == len(api_daily_df) :
+                    # 比對FinMind API與資料庫之資料內容
                     result = sql_daily_df.compare(api_daily_df)
                 else :
-                    # TODO : 檢討中
-                    unique_to_sql = sql_daily_df[~sql_daily_df.apply(tuple, axis=1).isin(api_daily_df.apply(tuple, axis=1))]
-                    unique_to_api = api_daily_df[~api_daily_df.apply(tuple, axis=1).isin(sql_daily_df.apply(tuple, axis=1))]
-                    print('日Ｋ：{} － 兩個DataFrame行數不同 ： \n\t資料庫端差異：\n {} \n\tＡＰＩ端差異：\n {}'.format(price_date,unique_to_sql,unique_to_api))
+                    # TODO : 這部分先做保留
+                    pass
                 if result is not None and result.empty is True :
                     print('【略過】日Ｋ：{}'.format(price_date))
                     time.sleep(1)
                 else :
                     print('【更新】日Ｋ：{}'.format(price_date))
-                    sqlcmd       = "DELETE FROM DailyPrice WHERE Date='{}'".format(price_date)
+                    sqlcmd = "DELETE FROM DailyPrice WHERE Date='{}'".format(price_date)
                     conn.execute(sqlcmd)
                     df_daily_price.to_sql('DailyPrice', conn, if_exists='append', index=False)
         
@@ -354,20 +353,20 @@ def UpdatestockDatabase(prev_days=10) :
                 sql_weekly_df = sql_weekly_df[new_order]
                 sql_weekly_df = sql_weekly_df.reset_index()
                 sql_weekly_df = sql_weekly_df.drop(columns=['index'])
-                
-                # 比對FinMind API與資料庫之資料內容
+                # 判斷略過還是更新
                 result = None
                 if len(sql_weekly_df) == len(api_weekly_df) :
+                    # 比對FinMind API與資料庫之資料內容
                     result = sql_weekly_df.compare(api_weekly_df)
                 else :
-                    # TODO : 檢討中
+                    # TODO : 這部分先做保留
                     pass
                 if result is not None and result.empty is True :
                     print('【略過】週Ｋ：{}'.format(price_date))
                     time.sleep(1)
                 else :
                     print('【更新】週Ｋ：{}'.format(price_date))
-                    sqlcmd       = "DELETE FROM WeeklyPrice WHERE Date='{}'".format(price_date)
+                    sqlcmd = "DELETE FROM WeeklyPrice WHERE Date='{}'".format(price_date)
                     conn.execute(sqlcmd)
                     df_weekly_price.to_sql('WeeklyPrice', conn, if_exists='append', index=False)
         
@@ -420,20 +419,18 @@ def UpdatestockDatabase(prev_days=10) :
                 sql_monthly_df = sql_monthly_df[new_order]
                 sql_monthly_df = sql_monthly_df.reset_index()
                 sql_monthly_df = sql_monthly_df.drop(columns=['index'])
-                result = None
-                # 比對FinMind API與資料庫之資料內容
-                result = None
+                # 判斷略過還是更新
                 if len(sql_monthly_df) == len(api_monthly_df) :
                     result = sql_monthly_df.compare(api_monthly_df)
                 else :
-                    # TODO : 檢討中
+                    # TODO : 這部分先做保留
                     pass
-                if result.empty is True :
+                if result is not None and result.empty is True :
                     print('【略過】月Ｋ：{}'.format(price_date))
                     time.sleep(1)
                 else :
                     print('【更新】月Ｋ：{}'.format(price_date))
-                    sqlcmd       = "DELETE FROM MonthlyPrice WHERE Date='{}'".format(price_date)
+                    sqlcmd = "DELETE FROM MonthlyPrice WHERE Date='{}'".format(price_date)
                     conn.execute(sqlcmd)
                     df_monthly_price.to_sql('MonthlyPrice', conn, if_exists='append', index=False)
     
