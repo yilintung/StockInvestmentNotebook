@@ -178,12 +178,9 @@ def date_range( beginDate, endDate):
     
     
 ##### 公用函式：更新技術分析資料庫 #####
-# 參數：回朔天數(預設為1)
-#      更新日K與否旗標(預設為True)
-#      更新週K與否旗標(預設為False)
-#      更新月K與否旗標(預設為False)
+# 參數：從今天開始往前回朔天數(預設為10)
 # 回傳：無
-def UpdatestockDatabase(prev_days=1, update_daily_price = True, update_weekly_price = False, update_monthly_price = False) :
+def UpdatestockDatabase(prev_days=10) :
     
     # 設定FinMind API
     load_dotenv(find_dotenv())
@@ -249,106 +246,204 @@ def UpdatestockDatabase(prev_days=1, update_daily_price = True, update_weekly_pr
         if user_count > (api_request_limit - 100) :
             print('抓取資料速度過快（user_count＝ {} ，api_request_limit ＝ {}），等三十分鐘後再行抓取'.format(user_count,api_request_limit))
             time.sleep(30*60)
-        
-        if update_daily_price is True :
-            # 股價日成交資訊 TaiwanStockPrice：一次拿特定日期，所有資料(只限 backer、sponsor 使用) #
-            sqlcmd = "SELECT * FROM DailyPrice WHERE Date='{}'".format(price_date)
-            df     = pd.read_sql_query(sqlcmd, conn)
-            if df.empty is True :
-                while True :
-                    try :
-                        df = api.taiwan_stock_daily(start_date=price_date,)
-                    except Exception as e:
-                        print('日K：日期{}發生錯誤{}，重試'.format(price_date,e))
-                        continue
-                    break
-                if df.empty is not True :
-                    print('日K：{}'.format(price_date))
-                    df_daily_price = df.drop(columns=['spread','Trading_turnover'])
-                    df_daily_price = df_daily_price.rename(columns={'date':'Date','stock_id':'StockID','Trading_Volume':'Volume','Trading_money':'Value','open':'Open','max':'High','min':'Low','close':'Close'})
-                    # 保存格式：日期、股票代碼、開盤價、最高價、最低價、收盤價、成交量與成交值
-                    df_daily_price = df_daily_price[['Date', 'StockID', 'Open', 'High', 'Low', 'Close', 'Volume', 'Value']]
-                    # 排除掉非TaiwanStockInfo內的股票
-                    df_daily_price = df_daily_price[df_daily_price['StockID'].isin(df_stock_info['StockID'].to_list())]
+            
+        # 股價日成交資訊 TaiwanStockPrice：一次拿特定日期，所有資料(只限 backer、sponsor 使用) #
+        while True :
+            try :
+                df = api.taiwan_stock_daily(start_date=price_date,)
+            except Exception as e:
+                print('【重試】日Ｋ：日期{}發生錯誤{}'.format(price_date,e))
+                continue
+            break
+        if df.empty is True :
+            # ☆ 如果無法從FinMind API中取得技術面資料，則跳過該日期並暫停1秒
+            time.sleep(1)
+        else :
+            # ★ 將FinMind API技術面資料轉換為資料庫所需格式
+            df_daily_price = df.drop(columns=['spread','Trading_turnover'])
+            df_daily_price = df_daily_price.rename(columns={'date':'Date','stock_id':'StockID','Trading_Volume':'Volume','Trading_money':'Value','open':'Open','max':'High','min':'Low','close':'Close'})
+            # 保存格式：日期、股票代碼、開盤價、最高價、最低價、收盤價、成交量與成交值
+            df_daily_price = df_daily_price[['Date', 'StockID', 'Open', 'High', 'Low', 'Close', 'Volume', 'Value']]
+            # 排除掉非TaiwanStockInfo內的股票
+            df_daily_price = df_daily_price[df_daily_price['StockID'].isin(df_stock_info['StockID'].to_list())]
+            
+            # ◇ 以該日期為參數讀取資料庫
+            sqlcmd       = "SELECT * FROM DailyPrice WHERE Date='{}'".format(price_date)
+            df_sql_daily = pd.read_sql_query(sqlcmd, conn)
+      
+            # ◆ 判斷該日期的資料是否存在於資料庫中？
+            if df_sql_daily.empty is True :
+                print('【新建】日Ｋ：{}'.format(price_date))
+                df_daily_price.to_sql('DailyPrice', conn, if_exists='append', index=False)
+            else:
+                # api_daily_df 拷貝自 df_daily_price
+                api_daily_df = df_daily_price.copy()
+                api_daily_df = api_daily_df.reset_index()
+                api_daily_df = api_daily_df.drop(columns=['index'])
+                # sql_daily_df 拷貝自 df_sql_daily
+                sql_daily_df = df_sql_daily.copy()
+                sql_daily_df = sql_daily_df.drop(columns=['SerialNo'])
+                new_order    = api_daily_df.columns.to_list()
+                sql_daily_df = sql_daily_df[new_order]
+                sql_daily_df = sql_daily_df.reset_index()
+                sql_daily_df = sql_daily_df.drop(columns=['index'])
+                # 比對FinMind API與資料庫之資料內容
+                result = None
+                try:
+                    result = sql_daily_df.compare(api_daily_df)
+                except Exception as e:
+                    # TODO：這部分還不知道是什麼問題？
+                    print(e)
+                    print(api_daily_df)
+                    print(sql_daily_df)
+                    result = pd.DataFrame()
+                if result is not None and result.empty is True :
+                    print('【略過】日Ｋ：{}'.format(price_date))
+                    time.sleep(1)
+                else :
+                    print('【更新】日Ｋ：{}'.format(price_date))
+                    sqlcmd       = "DELETE * FROM DailyPrice WHERE Date='{}'".format(price_date)
+                    df_sql_daily = pd.read_sql_query(sqlcmd, conn)
                     df_daily_price.to_sql('DailyPrice', conn, if_exists='append', index=False)
-                else :    
-                    time.sleep(1)
-            else :
-                #print('日K：日期{}資料已存在於資料庫中'.format(price_date))
-                time.sleep(1)
         
-        if update_weekly_price is True :
-            # 台股週 K 資料表 TaiwanStockWeekPrice (只限 backer、sponsor 會員使用) ： 一次拿特定日期，所有資料(只限 backer、sponsor 使用) #
-            sqlcmd = "SELECT * FROM WeeklyPrice WHERE Date='{}'".format(price_date)
-            df     = pd.read_sql_query(sqlcmd, conn)
-            if df.empty is True :
-                url = "https://api.finmindtrade.com/api/v4/data"
-                parameter = {
-                    "dataset": "TaiwanStockWeekPrice",
-                    "start_date": price_date,
-                    "token": token,
-                }
-                while True :
-                    resp = requests.get(url, params=parameter)
-                    if resp.status_code == 200 :
-                        break
-                    else :
-                        print('週K：日期{}發生錯誤，回應狀態碼 ＝ {}'.format(price_date,resp.status_code))
-                        if resp.status_code == 402 :
-                            time.sleep(10*60)
-                data = resp.json()
-                df_weekly_price = pd.DataFrame(data["data"])
-                if df_weekly_price.empty is not True :
-                    print('週K：{}'.format(price_date))
-                    df_weekly_price = df_weekly_price.drop(columns=['yweek','spread','trading_turnover'])
-                    df_weekly_price = df_weekly_price.rename(columns={'date':'Date','stock_id':'StockID','trading_volume':'Volume','trading_money':'Value','open':'Open','max':'High','min':'Low','close':'Close'})
-                    # 保存格式：日期、股票代碼、開盤價、最高價、最低價、收盤價、成交量與成交值
-                    df_weekly_price = df_weekly_price[['Date', 'StockID', 'Open', 'High', 'Low', 'Close', 'Volume', 'Value']]
-                    # 排除掉非TaiwanStockInfo內的股票
-                    df_weekly_price = df_weekly_price[df_weekly_price['StockID'].isin(df_stock_info['StockID'].to_list())]
+        # 台股週 K 資料表 TaiwanStockWeekPrice (只限 backer、sponsor 會員使用) ： 一次拿特定日期，所有資料(只限 backer、sponsor 使用) #
+        url = "https://api.finmindtrade.com/api/v4/data"
+        parameter = {
+            "dataset": "TaiwanStockWeekPrice",
+            "start_date": price_date,
+            "token": token,
+        }
+        while True :
+            resp = requests.get(url, params=parameter)
+            if resp.status_code == 200 :
+                break
+            else :
+                print('【重試】週Ｋ：日期{}發生錯誤，回應狀態碼 ＝ {}'.format(price_date,resp.status_code))
+                if resp.status_code == 402 :
+                    time.sleep(10*60)
+        data = resp.json()
+        df_weekly_price = pd.DataFrame(data["data"])
+        if df_weekly_price.empty is True :
+            # ☆ 如果無法從FinMind API中取得技術面資料，則跳過該日期並暫停1秒
+            time.sleep(1)
+        else :
+            # ★ 將FinMind API技術面資料轉換為資料庫所需格式
+            df_weekly_price = df_weekly_price.drop(columns=['yweek','spread','trading_turnover'])
+            df_weekly_price = df_weekly_price.rename(columns={'date':'Date','stock_id':'StockID','trading_volume':'Volume','trading_money':'Value','open':'Open','max':'High','min':'Low','close':'Close'})
+            # 保存格式：日期、股票代碼、開盤價、最高價、最低價、收盤價、成交量與成交值
+            df_weekly_price = df_weekly_price[['Date', 'StockID', 'Open', 'High', 'Low', 'Close', 'Volume', 'Value']]
+            # 排除掉非TaiwanStockInfo內的股票
+            df_weekly_price = df_weekly_price[df_weekly_price['StockID'].isin(df_stock_info['StockID'].to_list())]
+            
+            # ◇ 以該日期為參數讀取資料庫
+            sqlcmd        = "SELECT * FROM WeeklyPrice WHERE Date='{}'".format(price_date)
+            df_sql_weekly = pd.read_sql_query(sqlcmd, conn)
+            
+            # ◆ 判斷該日期的資料是否存在於資料庫中？
+            if df_sql_weekly.empty is True :
+                print('【新建】週Ｋ：{}'.format(price_date))
+                df_weekly_price.to_sql('WeeklyPrice', conn, if_exists='append', index=False)
+            else:
+                # api_weekly_df 拷貝自 df_weekly_price
+                api_weekly_df = df_weekly_price.copy()
+                api_weekly_df = api_weekly_df.reset_index()
+                api_weekly_df = api_weekly_df.drop(columns=['index'])
+                # sql_weekly_df 拷貝自 df_sql_weekly
+                sql_weekly_df = df_sql_weekly.copy()
+                sql_weekly_df = sql_weekly_df.drop(columns=['SerialNo'])
+                new_order     = api_weekly_df.columns.to_list()
+                sql_weekly_df = sql_weekly_df[new_order]
+                sql_weekly_df = sql_weekly_df.reset_index()
+                sql_weekly_df = sql_weekly_df.drop(columns=['index'])
+                
+                # 比對FinMind API與資料庫之資料內容
+                result = None
+                try:
+                    result = sql_weekly_df.compare(api_weekly_df)
+                except Exception as e:
+                    # TODO：這部分還不知道是什麼問題？
+                    print(e)
+                    print(api_daily_df)
+                    print(sql_daily_df)
+                    result = pd.DataFrame()
+                if result.empty is True :
+                    print('【略過】週Ｋ：{}'.format(price_date))
+                    time.sleep(1)
+                else :
+                    print('【更新】週Ｋ：{}'.format(price_date))
+                    sqlcmd       = "DELETE * FROM WeeklyPrice WHERE Date='{}'".format(price_date)
+                    df_sql_daily = pd.read_sql_query(sqlcmd, conn)
                     df_weekly_price.to_sql('WeeklyPrice', conn, if_exists='append', index=False)
-                else :    
-                    time.sleep(1)
-            else :
-                #print('週K：日期{}資料已存在於資料庫中'.format(price_date))
-                time.sleep(1)
         
-        if update_monthly_price is True :
-            # 台股月 K 資料表 TaiwanStockMonthPrice (只限 backer、sponsor 會員使用) ： 一次拿特定日期，所有資料(只限 backer、sponsor 使用) #
-            sqlcmd = "SELECT * FROM MonthlyPrice WHERE Date='{}'".format(price_date)
-            df     = pd.read_sql_query(sqlcmd, conn)
-            if df.empty is True :
-                url = "https://api.finmindtrade.com/api/v4/data"
-                parameter = {
-                    "dataset": "TaiwanStockMonthPrice",
-                    "start_date": price_date,
-                    "token": token, 
-                }
-                while True :
-                    resp = requests.get(url, params=parameter)
-                    if resp.status_code == 200 :
-                        break
-                    else :
-                        print('月K：日期{}發生錯誤，回應狀態碼 ＝ {}'.format(price_date,resp.status_code))
-                        if resp.status_code == 402 :
-                            time.sleep(10*60)
-                data = resp.json()
-                df_monthly_price = pd.DataFrame(data["data"])
-                if df_monthly_price.empty is not True :
-                    print('月K：{}'.format(price_date))
-                    df_monthly_price = df_monthly_price.drop(columns=['ymonth','spread','trading_turnover'])
-                    df_monthly_price = df_monthly_price.rename(columns={'date':'Date','stock_id':'StockID','trading_volume':'Volume','trading_money':'Value','open':'Open','max':'High','min':'Low','close':'Close'})
-                    # 保存格式：日期、股票代碼、開盤價、最高價、最低價、收盤價、成交量與成交值
-                    df_monthly_price = df_monthly_price[['Date', 'StockID', 'Open', 'High', 'Low', 'Close', 'Volume', 'Value']]
-                    # 排除掉非TaiwanStockInfo內的股票
-                    df_monthly_price = df_monthly_price[df_monthly_price['StockID'].isin(df_stock_info['StockID'].to_list())]
-                    df_monthly_price.to_sql('MonthlyPrice', conn, if_exists='append', index=False)
-                else :    
-                    time.sleep(1)
+        # 台股月 K 資料表 TaiwanStockMonthPrice (只限 backer、sponsor 會員使用) ： 一次拿特定日期，所有資料(只限 backer、sponsor 使用) #
+        url = "https://api.finmindtrade.com/api/v4/data"
+        parameter = {
+            "dataset": "TaiwanStockMonthPrice",
+            "start_date": price_date,
+            "token": token, 
+        }
+        while True :
+            resp = requests.get(url, params=parameter)
+            if resp.status_code == 200 :
+                break
             else :
-                #print('月K：日期{}資料已存在於資料庫中'.format(price_date))
-                time.sleep(1)
-
+                print('【重試】月K：日期{}發生錯誤，回應狀態碼 ＝ {}'.format(price_date,resp.status_code))
+                if resp.status_code == 402 :
+                    time.sleep(10*60)
+        data = resp.json()
+        df_monthly_price = pd.DataFrame(data["data"])
+        if df_monthly_price.empty is True :
+            # ☆ 如果無法從FinMind API中取得技術面資料，則跳過該日期並暫停1秒
+            time.sleep(1)
+        else :
+            # ★ 將FinMind API技術面資料轉換為資料庫所需格式
+            df_monthly_price = df_monthly_price.drop(columns=['ymonth','spread','trading_turnover'])
+            df_monthly_price = df_monthly_price.rename(columns={'date':'Date','stock_id':'StockID','trading_volume':'Volume','trading_money':'Value','open':'Open','max':'High','min':'Low','close':'Close'})
+            # 保存格式：日期、股票代碼、開盤價、最高價、最低價、收盤價、成交量與成交值
+            df_monthly_price = df_monthly_price[['Date', 'StockID', 'Open', 'High', 'Low', 'Close', 'Volume', 'Value']]
+            # 排除掉非TaiwanStockInfo內的股票
+            df_monthly_price = df_monthly_price[df_monthly_price['StockID'].isin(df_stock_info['StockID'].to_list())]
+            
+            # ◇ 以該日期為參數讀取資料庫
+            sqlcmd        = "SELECT * FROM MonthlyPrice WHERE Date='{}'".format(price_date)
+            df_sql_monthly = pd.read_sql_query(sqlcmd, conn)
+            
+            # ◆ 判斷該日期的資料是否存在於資料庫中？
+            if df_sql_monthly.empty is True :
+                print('【新建】月Ｋ：{}'.format(price_date))
+                df_monthly_price.to_sql('MonthlyPrice', conn, if_exists='append', index=False)
+            else:
+                # api_monthly_df 拷貝自 df_monthly_price
+                api_monthly_df = df_monthly_price.copy()
+                api_monthly_df = api_monthly_df.reset_index()
+                api_monthly_df = api_monthly_df.drop(columns=['index'])
+                # sql_monthly_df 拷貝自 df_sql_monthly
+                sql_monthly_df = df_sql_monthly.copy()
+                sql_monthly_df = sql_monthly_df.drop(columns=['SerialNo'])
+                new_order     = api_monthly_df.columns.to_list()
+                sql_monthly_df = sql_monthly_df[new_order]
+                sql_monthly_df = sql_monthly_df.reset_index()
+                sql_monthly_df = sql_monthly_df.drop(columns=['index'])
+                result = None
+                # 比對FinMind API與資料庫之資料內容
+                result = None
+                try:
+                    result = sql_monthly_df.compare(api_monthly_df)
+                except Exception as e:
+                    # TODO：這部分還不知道是什麼問題？
+                    print(e)
+                    print(api_daily_df)
+                    print(sql_daily_df)
+                    result = pd.DataFrame()
+                if result.empty is True :
+                    print('【略過】月Ｋ：{}'.format(price_date))
+                    time.sleep(1)
+                else :
+                    print('【更新】月Ｋ：{}'.format(price_date))
+                    sqlcmd       = "DELETE * FROM MonthlyPrice WHERE Date='{}'".format(price_date)
+                    df_sql_daily = pd.read_sql_query(sqlcmd, conn)
+                    df_monthly_price.to_sql('MonthlyPrice', conn, if_exists='append', index=False)
+    
     # 修改資料庫
     conn.commit()
     
