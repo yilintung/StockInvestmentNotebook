@@ -289,21 +289,20 @@ def UpdatestockDatabase(prev_days=10) :
                 sql_daily_df = sql_daily_df.drop(columns=['index'])
                 # 比對FinMind API與資料庫之資料內容
                 result = None
-                try:
+                if len(sql_daily_df) == len(api_daily_df) :
                     result = sql_daily_df.compare(api_daily_df)
-                except Exception as e:
-                    # TODO：這部分還不知道是什麼問題？
-                    print(e)
-                    print(api_daily_df)
-                    print(sql_daily_df)
-                    result = pd.DataFrame()
+                else :
+                    # TODO : 檢討中
+                    unique_to_sql = sql_daily_df[~sql_daily_df.apply(tuple, axis=1).isin(api_daily_df.apply(tuple, axis=1))]
+                    unique_to_api = api_daily_df[~api_daily_df.apply(tuple, axis=1).isin(sql_daily_df.apply(tuple, axis=1))]
+                    print('日Ｋ：{} － 兩個DataFrame行數不同 ： \n\t資料庫端差異：\n {} \n\tＡＰＩ端差異：\n {}'.format(price_date,unique_to_sql,unique_to_api))
                 if result is not None and result.empty is True :
                     print('【略過】日Ｋ：{}'.format(price_date))
                     time.sleep(1)
                 else :
                     print('【更新】日Ｋ：{}'.format(price_date))
-                    sqlcmd       = "DELETE * FROM DailyPrice WHERE Date='{}'".format(price_date)
-                    df_sql_daily = pd.read_sql_query(sqlcmd, conn)
+                    sqlcmd       = "DELETE FROM DailyPrice WHERE Date='{}'".format(price_date)
+                    conn.execute(sqlcmd)
                     df_daily_price.to_sql('DailyPrice', conn, if_exists='append', index=False)
         
         # 台股週 K 資料表 TaiwanStockWeekPrice (只限 backer、sponsor 會員使用) ： 一次拿特定日期，所有資料(只限 backer、sponsor 使用) #
@@ -358,21 +357,18 @@ def UpdatestockDatabase(prev_days=10) :
                 
                 # 比對FinMind API與資料庫之資料內容
                 result = None
-                try:
+                if len(sql_weekly_df) == len(api_weekly_df) :
                     result = sql_weekly_df.compare(api_weekly_df)
-                except Exception as e:
-                    # TODO：這部分還不知道是什麼問題？
-                    print(e)
-                    print(api_daily_df)
-                    print(sql_daily_df)
-                    result = pd.DataFrame()
-                if result.empty is True :
+                else :
+                    # TODO : 檢討中
+                    pass
+                if result is not None and result.empty is True :
                     print('【略過】週Ｋ：{}'.format(price_date))
                     time.sleep(1)
                 else :
                     print('【更新】週Ｋ：{}'.format(price_date))
-                    sqlcmd       = "DELETE * FROM WeeklyPrice WHERE Date='{}'".format(price_date)
-                    df_sql_daily = pd.read_sql_query(sqlcmd, conn)
+                    sqlcmd       = "DELETE FROM WeeklyPrice WHERE Date='{}'".format(price_date)
+                    conn.execute(sqlcmd)
                     df_weekly_price.to_sql('WeeklyPrice', conn, if_exists='append', index=False)
         
         # 台股月 K 資料表 TaiwanStockMonthPrice (只限 backer、sponsor 會員使用) ： 一次拿特定日期，所有資料(只限 backer、sponsor 使用) #
@@ -427,21 +423,18 @@ def UpdatestockDatabase(prev_days=10) :
                 result = None
                 # 比對FinMind API與資料庫之資料內容
                 result = None
-                try:
+                if len(sql_monthly_df) == len(api_monthly_df) :
                     result = sql_monthly_df.compare(api_monthly_df)
-                except Exception as e:
-                    # TODO：這部分還不知道是什麼問題？
-                    print(e)
-                    print(api_daily_df)
-                    print(sql_daily_df)
-                    result = pd.DataFrame()
+                else :
+                    # TODO : 檢討中
+                    pass
                 if result.empty is True :
                     print('【略過】月Ｋ：{}'.format(price_date))
                     time.sleep(1)
                 else :
                     print('【更新】月Ｋ：{}'.format(price_date))
-                    sqlcmd       = "DELETE * FROM MonthlyPrice WHERE Date='{}'".format(price_date)
-                    df_sql_daily = pd.read_sql_query(sqlcmd, conn)
+                    sqlcmd       = "DELETE FROM MonthlyPrice WHERE Date='{}'".format(price_date)
+                    conn.execute(sqlcmd)
                     df_monthly_price.to_sql('MonthlyPrice', conn, if_exists='append', index=False)
     
     # 修改資料庫
