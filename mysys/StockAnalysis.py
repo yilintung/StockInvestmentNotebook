@@ -745,14 +745,14 @@ class StockAnalysis :
             daily_start_date,_ = get_monday_to_sunday((current_date - datetime.timedelta(days=730)).strftime('%Y-%m-%d'))
             weekly_start_date  = daily_start_date
             weekly_end_date,_  = get_monday_to_sunday(daily_end_date)
-            sqlcmd             = "SELECT * FROM WeeklyPrice WHERE Date='{}'".format(weekly_end_date)
+            sqlcmd             = "SELECT * FROM WeeklyPrice WHERE Date='{}' ORDER BY Date".format(weekly_end_date)
             df                 = pd.read_sql_query(sqlcmd, self._conn)
             if df.empty is True :
                 weekly_end_date,_ = get_monday_to_sunday(daily_end_date,weekly=-1)
             self._debug_print('日Ｋ開始日期 ＝ {} ，日Ｋ結束日期 ＝ {} ， 週Ｋ開始日期 ＝ {} ， 週Ｋ結束日期 ＝ {}'.format(daily_start_date,daily_end_date,weekly_start_date,weekly_end_date))
             
             # 讀取日Ｋ價格資料
-            sql_cmd = "SELECT * FROM DailyPrice WHERE StockID='{}' AND (Date BETWEEN '{}' AND '{}')".format(stock_id,daily_start_date,daily_end_date)
+            sql_cmd = "SELECT * FROM DailyPrice WHERE StockID='{}' AND (Date BETWEEN '{}' AND '{}') ORDER BY Date".format(stock_id,daily_start_date,daily_end_date)
             try :
                 daily_price_df = pd.read_sql( sql_cmd, self._conn)
             except Exception as e:
@@ -776,7 +776,7 @@ class StockAnalysis :
             self._daily_price_df         = daily_price_df
             
             # 讀取週Ｋ價格資料
-            sql_cmd = "SELECT * FROM WeeklyPrice WHERE StockID='{}' AND (Date BETWEEN '{}' AND '{}')".format(stock_id,weekly_start_date,weekly_end_date)
+            sql_cmd = "SELECT * FROM WeeklyPrice WHERE StockID='{}' AND (Date BETWEEN '{}' AND '{}') ORDER BY Date".format(stock_id,weekly_start_date,weekly_end_date)
             try :
                 weekly_price_df = pd.read_sql( sql_cmd, self._conn)
             except Exception as e:
@@ -1262,7 +1262,7 @@ class StockAnalysis :
         end_date               = self._daily_price_talib_df.iloc[-1].name.strftime('%Y-%m-%d')
         weekly_start_date,_    = get_monday_to_sunday(start_date)
         weekly_end_date,_      = get_monday_to_sunday(end_date)
-        sqlcmd                 = "SELECT * FROM WeeklyPrice WHERE Date='{}'".format(weekly_end_date)
+        sqlcmd                 = "SELECT * FROM WeeklyPrice WHERE Date='{}' ORDER BY Date".format(weekly_end_date)
         df                     = pd.read_sql_query(sqlcmd, self._conn)
         if df.empty is True :
             weekly_end_date,_  = get_monday_to_sunday(end_date,weekly=-1)
