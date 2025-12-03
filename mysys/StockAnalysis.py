@@ -687,7 +687,7 @@ class StockAnalysis :
         description_list.append(description)
         
         # （８） 週Ｋ－週ＫＤ指標
-        description = self._weekly_kd_cross()
+        description = self._weekly_kd_cross(stock_id)
         tool_list.append('週Ｋ－週ＫＤ指標')
         description_list.append(description)
         
@@ -745,7 +745,7 @@ class StockAnalysis :
             daily_start_date,_ = get_monday_to_sunday((current_date - datetime.timedelta(days=730)).strftime('%Y-%m-%d'))
             weekly_start_date  = daily_start_date
             weekly_end_date,_  = get_monday_to_sunday(daily_end_date)
-            sqlcmd             = "SELECT * FROM WeeklyPrice WHERE Date='{}' ORDER BY Date".format(weekly_end_date)
+            sqlcmd             = "SELECT * FROM WeeklyPrice WHERE StockID='{}' AND Date='{}'".format(stock_id,weekly_end_date)
             df                 = pd.read_sql_query(sqlcmd, self._conn)
             if df.empty is True :
                 weekly_end_date,_ = get_monday_to_sunday(daily_end_date,weekly=-1)
@@ -1256,13 +1256,13 @@ class StockAnalysis :
         return description_str
         
     ### 量化技術分析工具： 確認週ＫＤ指標交叉 ###
-    def _weekly_kd_cross( self) :
+    def _weekly_kd_cross( self, stock_id) :
         # 設定中期(60)週Ｋ線區間
         start_date             = self._daily_price_talib_df.iloc[-60].name.strftime('%Y-%m-%d')
         end_date               = self._daily_price_talib_df.iloc[-1].name.strftime('%Y-%m-%d')
         weekly_start_date,_    = get_monday_to_sunday(start_date)
         weekly_end_date,_      = get_monday_to_sunday(end_date)
-        sqlcmd                 = "SELECT * FROM WeeklyPrice WHERE Date='{}' ORDER BY Date".format(weekly_end_date)
+        sqlcmd                 = "SELECT * FROM WeeklyPrice WHERE StockID='{}' AND Date='{}' ".format(stock_id,weekly_end_date)
         df                     = pd.read_sql_query(sqlcmd, self._conn)
         if df.empty is True :
             weekly_end_date,_  = get_monday_to_sunday(end_date,weekly=-1)
