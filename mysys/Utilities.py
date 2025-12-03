@@ -63,7 +63,7 @@ def DrawOnKlineChart( stock_id, range_start_date, range_end_date, callback_funct
     industry_category = df_stock_info.loc[stock_id]['IndustryCategory']
     
     # 讀取日Ｋ價格資料
-    sql_cmd = "SELECT * FROM DailyPrice WHERE StockID='{}' AND (Date BETWEEN '{}' AND '{}')".format(stock_id,daily_start_date,daily_end_date)
+    sql_cmd = "SELECT * FROM DailyPrice WHERE StockID='{}' AND (Date BETWEEN '{}' AND '{}') ORDER BY Date".format(stock_id,daily_start_date,daily_end_date)
     daily_price_df = pd.read_sql( sql_cmd, conn)
     
     # 格式轉換：日期格式、成交量(成交值)
