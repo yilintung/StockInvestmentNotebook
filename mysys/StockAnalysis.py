@@ -431,7 +431,7 @@ def chart_pattern_recognition( prices, debug=False):
             bottom_pattern_exist = True
             if 'bottom_pattern_breakout_date' in possible_bottom_pattern :
                 # 底部型態突破後確認與處理
-                for idx in range(date_to_index(prices,possible_bottom_pattern['bottom_pattern_breakout_date']),date_to_index(prices,prices.iloc[-1].name)) :
+                for idx in range(date_to_index(prices,possible_bottom_pattern['bottom_pattern_breakout_date']),date_to_index(prices,prices.iloc[-1].name)+1) :
                     # 當最高價大於等於底部型態目標價時，視為底部型態完成（到達滿足區或目標價）
                     if prices.iloc[idx]['High'] >= possible_bottom_pattern['target_price'] :
                         bottom_pattern_reached      = True
@@ -1080,9 +1080,9 @@ class StockAnalysis :
                 pattern_description = '{}之{}，型態範圍由{}開始到{}結束，估算目標價為{:.2f}{}。\n'.format(pattern['類型'],pattern['型態'],pattern['資料']['neckline_start_date'],pattern['資料']['neckline_end_date'],pattern['資料']['target_price'],self._price_unit)
             elif 'bottom_pattern_breakout_date' in pattern['資料'] :
                 if '已達目標價之日期' in pattern and pattern['已達目標價之日期'] is not None :
-                    pattern_description = '{}之{}，型態範圍由{}開始到{}結束，{}時已達估算之目標價（{:.2f}{}）。\n'.format(pattern['類型'],pattern['型態'],pattern['資料']['neckline_start_date'],pattern['資料']['neckline_end_date'], pattern['已達目標價之日期'],pattern['資料']['target_price'],self._price_unit)
+                    pattern_description = '{}之{}，型態範圍由{}開始到{}結束，{}時已達估算之目標價（{:.2f}{}）。\n'.format(pattern['類型'],pattern['型態'],pattern['資料']['neckline_start_date'],pattern['資料']['bottom_pattern_breakout_date'], pattern['已達目標價之日期'],pattern['資料']['target_price'],self._price_unit)
                 else :
-                    pattern_description = '{}之{}，型態範圍由{}開始到{}結束，估算目標價為{:.2f}{}。\n'.format(pattern['類型'],pattern['型態'],pattern['資料']['neckline_start_date'],pattern['資料']['neckline_end_date'],pattern['資料']['target_price'],self._price_unit)
+                    pattern_description = '{}之{}，型態範圍由{}開始到{}結束，估算目標價為{:.2f}{}。\n'.format(pattern['類型'],pattern['型態'],pattern['資料']['neckline_start_date'],pattern['資料']['bottom_pattern_breakout_date'],pattern['資料']['target_price'],self._price_unit)
             else :
                 if 'neckline_start_date' in pattern['資料'] and 'neckline_end_date' in pattern['資料'] :
                     pattern_description = '尚未成形{}之{}，型態範圍由{}開始到{}結束。\n'.format(pattern['類型'],pattern['型態'],pattern['資料']['neckline_start_date'],pattern['資料']['neckline_end_date'])
