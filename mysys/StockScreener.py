@@ -7,7 +7,7 @@ import time
 
 from talib.abstract import *
 
-##### 各股篩選 #####
+##### 個股篩選 #####
 # TODO : 這個版本剛完成，還在驗證中
 def StockScreener() :
     # 連線資料庫
