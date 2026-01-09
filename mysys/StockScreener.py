@@ -86,7 +86,13 @@ def StockScreener() :
             if talib_plus_di.iloc[-1] > talib_minus_di.iloc[-1] :
                 stock_id_list3.append(stock_id)
     
+    # 篩選結果
+    result_list = []
+    for stock_id in stock_id_list3 :
+        stock_info = df_stock_info.loc[df_stock_info['StockID'] == stock_id]
+        result_list.append((stock_info.iloc[0]['StockID'],stock_info.iloc[0]['StockName']))
+    
     # 關閉資料庫
     conn.close()
     
-    return stock_id_list3
+    return result_list
