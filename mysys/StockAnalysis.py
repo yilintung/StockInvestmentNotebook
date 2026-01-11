@@ -635,7 +635,7 @@ class StockAnalysis :
         df_stock_info = pd.read_sql("SELECT * FROM StockInfo", self._conn)
 
         stock_id_list1 = []
-        # 篩選一 : 保留加權與櫃買個股，並排除排除ETF、ETN、指數、大盤、所有證券與受益證券...等類別之股票
+        # 篩選一 : 保留加權與櫃買個股，並排除ETF、ETN、指數、大盤、所有證券與受益證券...等類別之股票
         #  ※ 追加排除：有英文字的股票
         for idx,stock_info in df_stock_info.iterrows() :
             stock_info_id = stock_info['StockID']
