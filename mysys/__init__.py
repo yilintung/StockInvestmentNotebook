@@ -11,4 +11,4 @@ StockChartPatterns  = StockChartPatterns.StockChartPatterns
 
 DateToIndex         = Utilities.DateToIndex
 DrawOnKlineChart    = Utilities.DrawOnKlineChart
-UpdatestockDatabase = Utilities.UpdatestockDatabase
+UpdateStockDatabase = Utilities.UpdateStockDatabase
