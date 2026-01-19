@@ -840,6 +840,14 @@ class StockAnalysis :
             except Exception as e:
                 self._debug_print('讀取日Ｋ資料錯誤，錯誤訊息＝ {}'.format(str(e)))
                 return False
+            # 拋棄停牌或未交易之日Ｋ價格資料
+            # TODO : 持續驗證中
+            zero_prices_df =  daily_price_df[(daily_price_df['Open'] == 0.0) & (daily_price_df['High'] == 0.0) & (daily_price_df['Low'] == 0.0) & (daily_price_df['Volume'] == 0) & (daily_price_df['Value'] == 0)]
+            if zero_prices_df.empty is False :
+                idx_to_drop = zero_prices_df.index
+                daily_price_dropped_df = daily_price_df.drop(index=idx_to_drop)
+                self._debug_print('※※※拋棄停牌或未交易之日Ｋ價格資料※※※\n停牌或未交易之價格資料 ＝\n{}\n資料索引 ＝ {}\n拋棄前資料筆數 ＝ {}，拋棄後資料筆數 ＝ {} 。'.format( zero_prices_df, idx_to_drop, daily_price_df.shape[0], daily_price_dropped_df.shape[0]))
+                daily_price_df          = daily_price_dropped_df
             # 格式轉換：日期格式、成交量(成交值)
             daily_price_df           = daily_price_df.drop(columns=['SerialNo','StockID'])
             daily_price_df['Date']   = daily_price_df['Date'].astype('datetime64[ns]')
