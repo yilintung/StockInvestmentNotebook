@@ -65,6 +65,20 @@ def DrawOnKlineChart( stock_id, range_start_date, range_end_date, callback_funct
     # 讀取日Ｋ價格資料
     sql_cmd = "SELECT * FROM DailyPrice WHERE StockID='{}' AND (Date BETWEEN '{}' AND '{}') ORDER BY Date".format(stock_id,daily_start_date,daily_end_date)
     daily_price_df = pd.read_sql( sql_cmd, conn)
+
+    # 拋棄停牌或未交易之日Ｋ價格資料
+    # TODO : 持續驗證中
+    zero_prices_df =  daily_price_df[(daily_price_df['Open'] == 0.0) & (daily_price_df['High'] == 0.0) & (daily_price_df['Low'] == 0.0) & (daily_price_df['Volume'] == 0) & (daily_price_df['Value'] == 0)]
+    if zero_prices_df.empty is False :
+        idx_to_drop = zero_prices_df.index
+        daily_price_dropped_df = daily_price_df.drop(index=idx_to_drop)
+        print('※※※拋棄停牌或未交易之日Ｋ價格資料※※※\n停牌或未交易之價格資料 ＝\n{}\n資料索引 ＝ {}\n拋棄前資料筆數 ＝ {}，拋棄後資料筆數 ＝ {} 。'.format( zero_prices_df, idx_to_drop, daily_price_df.shape[0], daily_price_dropped_df.shape[0]))
+        merged_df = pd.merge(daily_price_df, daily_price_dropped_df, on='Date', how='inner')
+        diff_1 = daily_price_df.merge(daily_price_dropped_df, how='outer', indicator=True).query('_merge == "left_only"').drop(columns=['_merge'])
+        diff_2 = daily_price_df.merge(daily_price_dropped_df, how='outer', indicator=True).query('_merge == "right_only"').drop(columns=['_merge'])
+        print('找出daily_price_df有但daily_price_dropped_df沒有的行 ＝ \n{}\n'.format(diff_1))
+        print('找出daily_price_dropped_df有但daily_price_df沒有的行 ＝ \n{}\n'.format(diff_2))
+        daily_price_df          = daily_price_dropped_df
     
     # 格式轉換：日期格式、成交量(成交值)
     daily_price_df           = daily_price_df.drop(columns=['SerialNo','StockID'])
@@ -180,7 +194,7 @@ def date_range( beginDate, endDate):
 ##### 公用函式：更新技術分析資料庫 #####
 # 參數：從今天開始往前回朔天數(預設為10)
 # 回傳：無
-def UpdatestockDatabase(prev_days=10) :
+def UpdateStockDatabase(prev_days=10) :
     
     # 設定FinMind API
     load_dotenv(find_dotenv())
