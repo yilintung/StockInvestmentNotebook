@@ -1142,7 +1142,10 @@ class StockAnalysis :
         elif current_volume >= check_volume_1 :
             description_str = description_str + '大型股大量'
         else :
-            description_str = description_str + '未至大量門檻'
+            if current_volume >= current_ma10 :
+                description_str = description_str + '成交量大於十日均量，但未至大量門檻'
+            else :
+                description_str = description_str + '成交量小於十日均量'
         description_str = description_str + '（成交量 ＝ {}{} ，十日均量 ＝ {}{}）'.format(current_volume,self._volume_unit,current_ma10,self._volume_unit)
         
         return description_str
