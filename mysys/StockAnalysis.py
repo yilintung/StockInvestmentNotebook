@@ -604,6 +604,10 @@ def crossunder(down,over):
 ###### 【內部函式】 當日Ｋ價格資料為零時之修正函式（這是ＦｉｎＭｉｎｄ的問題，參照：260113筆記.ipynb） ######
 # TODO : 持續驗證中
 def correcting_zero_price_issue( daily_price_df) :
+    # 開啟寫時複製(Copy-on-Write)
+    copy_on_write = pd.options.mode.copy_on_write
+    pd.options.mode.copy_on_write = True
+    
     # 當開盤價、最高價、收盤價與最低價為0時，參照前一天的收盤價
     zero_prices_df =  daily_price_df[(daily_price_df['Open'] == 0.0) & (daily_price_df['High'] == 0.0) & (daily_price_df['Low'] == 0.0) & (daily_price_df['Close'] == 0.0)]
     if zero_prices_df.empty is False :
@@ -618,6 +622,9 @@ def correcting_zero_price_issue( daily_price_df) :
             else :
                 # 當為第一筆資料時無法修正
                 pass
+                
+    # 還原初始狀態
+    pd.options.mode.copy_on_write = copy_on_write
     
 ##### 股票解盤 #####
 class StockAnalysis :
