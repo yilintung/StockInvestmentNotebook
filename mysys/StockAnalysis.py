@@ -601,20 +601,21 @@ def crossunder(down,over):
     crossdown =  (a1<a2) & (a1<b1) & (b2<a2)
     return crossdown
     
-###### 【內部函式】 當日Ｋ價格資料為零時之修正函式（這是ＦｉｎＭｉｎｄ的問題，參照：260113筆記.ipynb） ######
+###### 【內部函式】 當日Ｋ價格資料為零時之修正函式（這是FinMind的問題，參照：260113筆記.ipynb） ######
 # TODO : 持續驗證中
 def correcting_zero_price_issue( daily_price_df) :
     # 開啟寫時複製(Copy-on-Write)
     copy_on_write = pd.options.mode.copy_on_write
     pd.options.mode.copy_on_write = True
     
-    # 當開盤價、最高價、收盤價與最低價為0時，參照前一天的收盤價
+    # 找出開盤價、最高價、收盤價與最低價皆為0的價格資料
     zero_prices_df =  daily_price_df[(daily_price_df['Open'] == 0.0) & (daily_price_df['High'] == 0.0) & (daily_price_df['Low'] == 0.0) & (daily_price_df['Close'] == 0.0)]
     if zero_prices_df.empty is False :
         zero_prices_idx = zero_prices_df.index
         df_first_idx    = daily_price_df.iloc[0].name
         for idx in zero_prices_idx :
             if (idx - 1) >= df_first_idx :
+                # 當開盤價、最高價、收盤價與最低價皆為0時，會用前一個交易日的收盤價來做修正
                 prev_close_price = daily_price_df.loc[idx-1]['Close']
                 daily_price_df.loc[idx,'Open']  = prev_close_price
                 daily_price_df.loc[idx,'High']  = prev_close_price
