@@ -601,6 +601,24 @@ def crossunder(down,over):
     crossdown =  (a1<a2) & (a1<b1) & (b2<a2)
     return crossdown
     
+###### 【內部函式】 當日Ｋ價格資料為零時之修正函式（這是ＦｉｎＭｉｎｄ的問題，參照：260113筆記.ipynb） ######
+# TODO : 持續驗證中
+def correcting_zero_price_issue( daily_price_df) :
+    # 當開盤價、最高價、收盤價與最低價為0時，參照前一天的收盤價
+    zero_prices_df =  daily_price_df[(daily_price_df['Open'] == 0.0) & (daily_price_df['High'] == 0.0) & (daily_price_df['Low'] == 0.0) & (daily_price_df['Close'] == 0.0)]
+    if zero_prices_df.empty is False :
+        zero_prices_idx = zero_prices_df.index
+        for idx in zero_prices_idx :
+            if (idx - 1 > 0) :
+                prev_close_price = daily_price_df.loc[idx-1]['Close']
+                daily_price_df.loc[idx,'Open']  = prev_close_price
+                daily_price_df.loc[idx,'High']  = prev_close_price
+                daily_price_df.loc[idx,'Low']   = prev_close_price
+                daily_price_df.loc[idx,'Close'] = prev_close_price
+            else :
+                # 當為第一筆資料時無法修正
+                pass
+    
 ##### 股票解盤 #####
 class StockAnalysis :
     
@@ -657,6 +675,8 @@ class StockAnalysis :
         # 讀取日Ｋ價格資料
         sql_cmd = "SELECT * FROM DailyPrice WHERE Date BETWEEN '{}' AND '{}' ORDER BY Date".format(daily_start_date,daily_end_date)
         daily_price_df = pd.read_sql( sql_cmd, self._conn)
+        # 調整停牌或未交易之日Ｋ價格資料
+        correcting_zero_price_issue( daily_price_df)
         
         stock_id_list2 = []
         # 篩選二 : 保留股價落在10元至100元間的個股
@@ -840,14 +860,8 @@ class StockAnalysis :
             except Exception as e:
                 self._debug_print('讀取日Ｋ資料錯誤，錯誤訊息＝ {}'.format(str(e)))
                 return False
-            # 拋棄停牌或未交易之日Ｋ價格資料
-            # TODO : 持續驗證中
-            zero_prices_df =  daily_price_df[(daily_price_df['Open'] == 0.0) & (daily_price_df['High'] == 0.0) & (daily_price_df['Low'] == 0.0) & (daily_price_df['Volume'] == 0) & (daily_price_df['Value'] == 0)]
-            if zero_prices_df.empty is False :
-                idx_to_drop = zero_prices_df.index
-                daily_price_dropped_df = daily_price_df.drop(index=idx_to_drop)
-                self._debug_print('※※※拋棄停牌或未交易之日Ｋ價格資料※※※\n停牌或未交易之價格資料 ＝\n{}\n資料索引 ＝ {}\n拋棄前資料筆數 ＝ {}，拋棄後資料筆數 ＝ {} 。'.format( zero_prices_df, idx_to_drop, daily_price_df.shape[0], daily_price_dropped_df.shape[0]))
-                daily_price_df          = daily_price_dropped_df
+            # 調整停牌或未交易之日Ｋ價格資料
+            correcting_zero_price_issue( daily_price_df)
             # 格式轉換：日期格式、成交量(成交值)
             daily_price_df           = daily_price_df.drop(columns=['SerialNo','StockID'])
             daily_price_df['Date']   = daily_price_df['Date'].astype('datetime64[ns]')
