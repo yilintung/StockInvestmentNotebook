@@ -612,17 +612,17 @@ def correcting_zero_price_issue( daily_price_df) :
     zero_prices_df =  daily_price_df[(daily_price_df['Open'] == 0.0) & (daily_price_df['High'] == 0.0) & (daily_price_df['Low'] == 0.0) & (daily_price_df['Close'] == 0.0)]
     if zero_prices_df.empty is False :
         zero_prices_idx = zero_prices_df.index
+        df_first_idx    = daily_price_df.iloc[0].name
         for idx in zero_prices_idx :
-            if (idx - 1 > 0) :
+            if (idx - 1) >= df_first_idx :
                 prev_close_price = daily_price_df.loc[idx-1]['Close']
                 daily_price_df.loc[idx,'Open']  = prev_close_price
                 daily_price_df.loc[idx,'High']  = prev_close_price
                 daily_price_df.loc[idx,'Low']   = prev_close_price
                 daily_price_df.loc[idx,'Close'] = prev_close_price
             else :
-                # 當為第一筆資料時無法修正
                 pass
-                
+    
     # 還原初始狀態
     pd.options.mode.copy_on_write = copy_on_write
     
