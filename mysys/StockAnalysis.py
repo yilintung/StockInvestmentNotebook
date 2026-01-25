@@ -1375,6 +1375,7 @@ class StockAnalysis :
         elif curr_macd_dif < 0.0  and curr_macd_macd < 0.0:
             description_str = description_str + 'MACD雙線在零軸以下，中期空方'
         else :
+            self._debug_print('ＭＡＣＤ指標 － 中期多空不明 ： ＤＩＦ ＝ {} ，ＭＡＣＤ ＝ {}'.format(curr_macd_dif,curr_macd_macd))
             description_str = description_str + '（中期多空不明）'
         
         return description_str
