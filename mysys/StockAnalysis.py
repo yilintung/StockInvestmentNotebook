@@ -1365,10 +1365,15 @@ class StockAnalysis :
         # 解盤內容
         description_str = ''
         
-        if self._macd_df['macdsignal'].iloc[-1] > 0 :
-            description_str = description_str + 'MACD在零軸以上，中期多方'
-        elif self._macd_df['macdsignal'].iloc[-1] < 0 :
-            description_str = description_str + 'MACD在零軸以下，中期空方'
+        # macd -> DIF
+        curr_macd_dif  = self._macd_df['macd'].iloc[-1]
+        # macdsignal -> MACD
+        curr_macd_macd = self._macd_df['macdsignal'].iloc[-1]
+        
+        if curr_macd_dif > 0.0  and curr_macd_macd > 0.0:
+            description_str = description_str + 'MACD雙線在零軸以上，中期多方'
+        elif curr_macd_dif < 0.0  and curr_macd_macd < 0.0:
+            description_str = description_str + 'MACD雙線在零軸以下，中期空方'
         else :
             description_str = description_str + '（中期多空不明）'
         
