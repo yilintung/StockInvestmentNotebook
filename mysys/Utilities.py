@@ -296,7 +296,6 @@ def UpdateStockDatabase(prev_days=10) :
                     # 比對FinMind API與資料庫之資料內容
                     result = sql_daily_df.compare(api_daily_df)
                 else :
-                    # TODO : 這部分先做保留
                     pass
                 if result is not None and result.empty is True :
                     print('【略過】日Ｋ：{}'.format(price_date))
@@ -362,7 +361,6 @@ def UpdateStockDatabase(prev_days=10) :
                     # 比對FinMind API與資料庫之資料內容
                     result = sql_weekly_df.compare(api_weekly_df)
                 else :
-                    # TODO : 這部分先做保留
                     pass
                 if result is not None and result.empty is True :
                     print('【略過】週Ｋ：{}'.format(price_date))
@@ -426,7 +424,6 @@ def UpdateStockDatabase(prev_days=10) :
                 if len(sql_monthly_df) == len(api_monthly_df) :
                     result = sql_monthly_df.compare(api_monthly_df)
                 else :
-                    # TODO : 這部分先做保留
                     pass
                 if result is not None and result.empty is True :
                     print('【略過】月Ｋ：{}'.format(price_date))
