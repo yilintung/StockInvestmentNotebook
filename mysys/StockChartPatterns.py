@@ -668,8 +668,8 @@ class StockChartPatterns :
                         if bottom_pattern_breakout_index is not None :
                             neckline_end_idx = bottom_pattern_breakout_index
                         else :
-                            # TODO : 這部份待檢討
-                            #neckline_end_idx = bottom_pattern_end_idx
+                            # neckline_end_idx = bottom_pattern_end_idx
+                            # 頸線向後延伸
                             neckline_end_idx = check_breakout_end_idx
                     else :
                         neckline_end_idx = self._prices.iloc[-1].name
