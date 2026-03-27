@@ -197,7 +197,6 @@ def pattern_post_processing( prices , pattern_name, pattern_window ,debug = Fals
                 # 型態已跌破／突破
                 is_breakout = True
         
-        # TODO : 這部份待檢討
         if is_valid_top_bottom is True :
             # 確認頸線是否存在
             if neckline_start_date is None or neckline_end_date is None or neckline_start_price is None or neckline_end_price is None :
@@ -335,10 +334,6 @@ def pattern_post_processing( prices , pattern_name, pattern_window ,debug = Fals
                 support_line_end_date     = resistance_line_end_date
                 support_line_end_price    = tmp_support_price
                 
-                # TODO : 這部份待檢討
-                #if prices.iloc[idx]['Close'] > tmp_resistance_price or prices.iloc[idx]['Open'] > tmp_resistance_price or \
-                #  prices.iloc[idx]['Close'] < tmp_support_price or prices.iloc[idx]['Open'] < tmp_support_price :
-                #    break
                 if pattern_name == '上升楔形':
                     if prices.iloc[idx]['Close'] > tmp_resistance_price :
                         # 當為上升楔形時，若收盤價突破壓力時則代表該型態無效
@@ -433,10 +428,6 @@ def pattern_post_processing( prices , pattern_name, pattern_window ,debug = Fals
             support_line_end_date     = resistance_line_end_date
             support_line_end_price    = tmp_support_price
             
-            # TODO : 這部份待檢討
-            #if prices.iloc[idx]['Close'] > tmp_resistance_price or prices.iloc[idx]['Open'] > tmp_resistance_price or \
-            #  prices.iloc[idx]['Close'] < tmp_support_price or prices.iloc[idx]['Open'] < tmp_support_price :
-            #    break
             if pattern_name == '上升旗形' or pattern_name == '看跌三角旗形':
                 if prices.iloc[idx]['Close'] > tmp_resistance_price :
                     # 當為上升旗形(看跌)或看跌三角旗形時，若收盤價突破壓力時則代表該型態無效
@@ -497,8 +488,6 @@ def chart_pattern_recognition( prices, debug=False):
             possible_bottom_pattern = bottom_pattern
             possible_bottom_end_idx = bottom_end_idx
     if possible_bottom_pattern is not None :
-        # TODO : 這部份待檢討，由原先所有資料一半以後區間為有效改為最近一季的區間才是為有效
-        # if date_to_index(prices,possible_bottom_pattern['neckline_end_date']) > (date_to_index(prices,prices.iloc[-1].name) // 2) :
         if date_to_index(prices,possible_bottom_pattern['neckline_end_date']) > (date_to_index(prices,prices.iloc[-1].name) - 60) :
             # 底部型態識別之後處理程序
             bottom_pattern_exist = True
@@ -512,7 +501,6 @@ def chart_pattern_recognition( prices, debug=False):
                         pattern_recognition_debug_print('★ 已達底部型態之目標價 ： 日期 ＝ {} （索引 ＝ {}）'.format(bottom_pattern_reached_date,idx),debug=debug)
                         break
                     # 當收盤價小於突破價格５％時，該底部型態可能是突破失敗的情況
-                    # TODO : 這部份待檢討
                     if prices.iloc[idx]['Close'] < (possible_bottom_pattern['bottom_pattern_breakout_price'] - (possible_bottom_pattern['bottom_pattern_breakout_price'] * 0.05)):
                         bottom_pattern_exist = False
                         pattern_recognition_debug_print('☆ 底部型態可能突破失敗：突破價格為{:.2f}， 跌破日{}之收盤價為{:.2f}）'.format(possible_bottom_pattern['bottom_pattern_breakout_price'],prices.iloc[idx].name.strftime("%Y-%m-%d"),prices.iloc[idx]['Close']),debug=debug)
@@ -551,7 +539,6 @@ def chart_pattern_recognition( prices, debug=False):
                 price_last_idx             = date_to_index(prices,prices.iloc[-1].name)
                 if bottom_pattern_exist is True :
                     # 當已識別到（底型反轉操作法之）底部型態後所需額外處理程序
-                    # TODO : 這部份待檢討
                     if bottom_pattern_reached is True :
                         price_first_idx = date_to_index(prices,bottom_pattern_reached_date)
                         if cureent_pattern_first_idx < price_first_idx :
@@ -588,8 +575,6 @@ def chart_pattern_recognition( prices, debug=False):
                     pattern_end_idx = date_to_index(prices,pattern['neckline_end_date'])
                 elif 'support_line_end_date' in pattern :
                     pattern_end_idx = date_to_index(prices,pattern['support_line_end_date'])
-                # TODO : 這部份待檢討，由原先所有資料一半以後區間為有效改為最近一季的區間才是為有效
-                #if pattern_end_idx is not None and pattern_end_idx > (date_to_index(prices,prices.iloc[-1].name) // 2) :
                 if pattern_end_idx is not None and pattern_end_idx > (date_to_index(prices,prices.iloc[-1].name) - 60) :
                     pattern_return_list.append(result)
                     break
@@ -688,8 +673,7 @@ def crossunder(down,over):
     crossdown =  (a1<a2) & (a1<b1) & (b2<a2)
     return crossdown
     
-###### 【內部函式】 當日Ｋ價格資料為零時之修正函式（這是FinMind的問題，參照：260113筆記.ipynb） ######
-# TODO : 持續驗證中
+###### 【內部函式】 當日Ｋ價格資料為零時之修正函式 ######
 def correcting_zero_price_issue( daily_price_df, debug = False) :
     # 開啟寫時複製(Copy-on-Write)
     copy_on_write = pd.options.mode.copy_on_write
@@ -1631,7 +1615,6 @@ class StockAnalysis :
         self._debug_print('● 使用者提問詞（User Prompt） ＝ \n{}'.format(user_question))
         
         # 與ＧＰＴ－５模型對話
-        # TODO：更新至GPT-5.2，驗證中
         response = self._openai_api_client.chat.completions.create(
             model='gpt-5.2',
             messages=[
