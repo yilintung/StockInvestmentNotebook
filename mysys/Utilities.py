@@ -46,8 +46,9 @@ def DateToIndex( prices_df, date_in) :
 #       線段顏色
 def DrawOnKlineChart( stock_id, range_start_date, range_end_date, callback_function) :
     # 設定價格資料之日期範圍
-    daily_start_date,_ = get_monday_to_sunday(range_start_date)
-    daily_end_date     = datetime.datetime.today().strftime('%Y-%m-%d')
+    dt_range_start_date = datetime.datetime.strptime(range_start_date, "%Y-%m-%d") - datetime.timedelta(days=360)
+    daily_start_date = dt_range_start_date.strftime('%Y-%m-%d')
+    daily_end_date = datetime.datetime.today().strftime('%Y-%m-%d')
 
     # 連線資料庫
     conn = sqlite3.connect('data/stock.db')
