@@ -676,6 +676,7 @@ def crossunder(down,over):
     return crossdown
     
 ###### 【內部函式】 當日Ｋ價格資料為零時之修正函式 ######
+# 參考 ： https://finmind.github.io/tutor/TaiwanMarket/Technical/#taiwanstockprice 
 def correcting_zero_price_issue( daily_price_df, debug = False) :
     # 開啟寫時複製(Copy-on-Write)
     copy_on_write = pd.options.mode.copy_on_write
